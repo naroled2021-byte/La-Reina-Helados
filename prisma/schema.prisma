@@ -1,0 +1,399 @@
+// La Reina Helados — schema completo del dominio.
+// Motor actual: SQLite (desarrollo, cero instalación). Para producción, cambiar
+// `provider` a "postgresql" y `DATABASE_URL` en .env — el resto del código no cambia.
+// Nota: SQLite no soporta `enum` en Prisma, por eso los campos de estado son
+// String validados con los enums de TypeScript en lib/constants.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Usuarios, roles y permisos ----------
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  users       User[]
+  permissions Permission[] @relation("RolePermissions")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique // ej: "sales.create", "cash.close"
+  description String?
+  roles       Role[]   @relation("RolePermissions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  roleId        String
+  role          Role      @relation(fields: [roleId], references: [id])
+  active        Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  ordersSold        Order[]             @relation("OrderServedBy")
+  cashRegistersOpen  CashRegister[]     @relation("CashOpenedBy")
+  cashRegistersClose CashRegister[]     @relation("CashClosedBy")
+  cashMovements      CashMovement[]
+  productions        Production[]
+  inventoryMovements InventoryMovement[]
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+}
+
+// ---------- Catálogo ----------
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  order    Int       @default(0)
+  active   Boolean   @default(true)
+  products Product[]
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  imageUrl      String?
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
+  price         Float
+  cost          Float    @default(0)
+  active        Boolean  @default(true)
+  allowsFlavors Boolean  @default(false)
+  maxFlavors    Int      @default(0)
+  showInCounter Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderItems OrderItem[]
+  recipes    Recipe[]
+  promotions PromotionProduct[]
+}
+
+model Flavor {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  imageUrl       String?
+  category       String   @default("crema") // crema | agua | especial
+  active         Boolean  @default(true)
+  popular        Boolean  @default(false)
+  inventoryItemId String? @unique
+  inventoryItem  InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  createdAt      DateTime @default(now())
+
+  orderItemFlavors  OrderItemFlavor[]
+  recipes           Recipe[]
+  productionItems   ProductionItem[]
+}
+
+// ---------- Insumos, recetas e inventario ----------
+
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  notes       String?
+  active      Boolean  @default(true)
+
+  inventoryItems InventoryItem[]
+}
+
+model InventoryItem {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // FLAVOR | INGREDIENT | PACKAGING | TOPPING | BEVERAGE | SUPPLY | FINISHED_PRODUCT
+  unit        String   // kg | g | l | ml | unidad
+  currentStock Float   @default(0)
+  minStock    Float    @default(0)
+  maxStock    Float    @default(0)
+  cost        Float    @default(0)
+  price       Float?
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  active      Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  flavor              Flavor?
+  movements           InventoryMovement[]
+  recipeItems         RecipeItem[]
+}
+
+model InventoryMovement {
+  id              String   @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  type            String   // IN | OUT | ADJUSTMENT | PRODUCTION | SALE | WASTE
+  quantity        Float
+  reason          String?
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  createdAt       DateTime @default(now())
+}
+
+model Recipe {
+  id          String       @id @default(cuid())
+  name        String
+  productId   String?
+  product     Product?     @relation(fields: [productId], references: [id])
+  flavorId    String?
+  flavor      Flavor?      @relation(fields: [flavorId], references: [id])
+  yieldQty    Float
+  yieldUnit   String
+  notes       String?
+  items       RecipeItem[]
+  createdAt   DateTime     @default(now())
+}
+
+model RecipeItem {
+  id              String        @id @default(cuid())
+  recipeId        String
+  recipe          Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  quantity        Float
+  unit            String
+}
+
+// ---------- Producción ----------
+
+model Production {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  status      String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED
+  notes       String?
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  items ProductionItem[]
+}
+
+model ProductionItem {
+  id                String     @id @default(cuid())
+  productionId      String
+  production        Production @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  flavorId          String
+  flavor            Flavor     @relation(fields: [flavorId], references: [id])
+  quantityPlanned   Float
+  quantityProduced  Float      @default(0)
+  waste             Float      @default(0)
+  unit              String     @default("kg")
+}
+
+// ---------- Clientes ----------
+
+model Customer {
+  id             String    @id @default(cuid())
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  notes          String?
+  points         Int       @default(0)
+  totalSpent     Float     @default(0)
+  lastPurchaseAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  orders Order[]
+}
+
+// ---------- Ventas / Pedidos ----------
+
+model Order {
+  id              String   @id @default(cuid())
+  number          Int      @unique // asignado en la app: correlativo a partir de 1000
+  type            String   // DINE_IN | TAKEAWAY | DELIVERY
+  status          String   @default("RECEIVED") // RECEIVED | PREPARING | READY | DELIVERED | CANCELLED
+  channel         String   @default("COUNTER") // COUNTER | SELF_SERVICE
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  servedById      String?
+  servedBy        User?    @relation("OrderServedBy", fields: [servedById], references: [id])
+  tableNumber     String?
+  deliveryAddress String?
+  subtotal        Float    @default(0)
+  discount        Float    @default(0)
+  total           Float    @default(0)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items    OrderItem[]
+  payments Payment[]
+  cashMovements CashMovement[]
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  format        String?
+  quantity      Int      @default(1)
+  unitPrice     Float
+  subtotal      Float
+  notes         String?
+
+  parentItemId  String?
+  parent        OrderItem?  @relation("OrderItemExtras", fields: [parentItemId], references: [id], onDelete: Cascade)
+  extras        OrderItem[] @relation("OrderItemExtras")
+
+  flavors OrderItemFlavor[]
+}
+
+model OrderItemFlavor {
+  id          String    @id @default(cuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  flavorId    String
+  flavor      Flavor    @relation(fields: [flavorId], references: [id])
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method    String   // CASH | CARD | TRANSFER | QR | MERCADOPAGO | OTHER
+  amount    Float
+  status    String   @default("COMPLETED") // PENDING | COMPLETED | FAILED | REFUNDED
+  createdAt DateTime @default(now())
+}
+
+model PaymentMethodConfig {
+  id      String  @id @default(cuid())
+  key     String  @unique // CASH | CARD | TRANSFER | QR | MERCADOPAGO | OTHER
+  label   String
+  enabled Boolean @default(true)
+  order   Int     @default(0)
+}
+
+// ---------- Caja ----------
+
+model CashRegister {
+  id                     String    @id @default(cuid())
+  openedAt               DateTime  @default(now())
+  closedAt               DateTime?
+  openedById             String
+  openedBy               User      @relation("CashOpenedBy", fields: [openedById], references: [id])
+  closedById             String?
+  closedBy               User?     @relation("CashClosedBy", fields: [closedById], references: [id])
+  openingAmount          Float     @default(0)
+  closingAmountDeclared  Float?
+  closingAmountExpected  Float?
+  difference             Float?
+  status                 String    @default("OPEN") // OPEN | CLOSING | CLOSED
+  notes                  String?
+
+  movements CashMovement[]
+}
+
+model CashMovement {
+  id             String       @id @default(cuid())
+  cashRegisterId String
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  type           String       // SALE_CASH | SALE_DIGITAL | INCOME | EXPENSE
+  amount         Float
+  description    String?
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id])
+  orderId        String?
+  order          Order?       @relation(fields: [orderId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+// ---------- Promociones ----------
+
+model Promotion {
+  id            String   @id @default(cuid())
+  name          String
+  type          String   // TWO_FOR_ONE | THREE_FOR_TWO | PERCENTAGE_DISCOUNT | QUANTITY_DISCOUNT | COMBO | TIME_OF_DAY | DAY_OF_WEEK | LOYALTY
+  value         Float?
+  minQuantity   Int?
+  daysOfWeek    String?  // ej: "MON,TUE,WED"
+  startTime     String?
+  endTime       String?
+  startDate     DateTime?
+  endDate       DateTime?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  products PromotionProduct[]
+  coupons  Coupon[]
+}
+
+model PromotionProduct {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+}
+
+model Coupon {
+  id            String     @id @default(cuid())
+  code          String     @unique
+  promotionId   String?
+  promotion     Promotion? @relation(fields: [promotionId], references: [id])
+  discountType  String     // PERCENTAGE | FIXED
+  discountValue Float
+  usageLimit    Int?
+  usedCount     Int        @default(0)
+  expiresAt     DateTime?
+  active        Boolean    @default(true)
+}
+
+// ---------- Notificaciones ----------
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // LOW_STOCK | NEW_ORDER | DELAYED_ORDER | PRODUCTION_NEEDED | SALE_COMPLETED | CASH_CLOSED | CASH_DIFFERENCE | OUT_OF_STOCK
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// ---------- Configuración y auditoría ----------
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  group     String   @default("general")
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  metadata  String?
+  createdAt DateTime @default(now())
+}

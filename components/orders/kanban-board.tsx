@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { OrderCard } from "@/components/orders/order-card";
+import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
+import { playNotificationSound } from "@/lib/notification-sound";
+import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import type { KanbanOrder } from "@/components/orders/types";
+
+function toTicketData(order: KanbanOrder): TicketData {
+  return {
+    number: order.number,
+    createdAt: order.createdAt,
+    items: order.orderItems.map((it, i) => ({
+      key: String(i),
+      productId: "",
+      productName: it.productName,
+      unitPrice: it.unitPrice,
+      quantity: it.quantity,
+      flavorIds: [],
+      flavorNames: it.flavorNames,
+    })),
+    subtotal: order.subtotal,
+    discount: order.discount,
+    total: order.total,
+    paymentMethodLabel: PAYMENT_METHOD_LABEL[order.paymentMethod ?? ""] ?? order.paymentMethod ?? "",
+    orderType: order.type,
+    customerName: order.customerName,
+    deliveryAddress: order.deliveryAddress,
+  };
+}
+
+const columns: { status: string; title: string; next: string | null; nextLabel: string | null; prev: string | null }[] = [
+  { status: ORDER_STATUS.RECEIVED, title: "Nuevos", next: ORDER_STATUS.PREPARING, nextLabel: "Preparar", prev: null },
+  {
+    status: ORDER_STATUS.PREPARING,
+    title: "En preparación",
+    next: ORDER_STATUS.READY,
+    nextLabel: "Listo",
+    prev: ORDER_STATUS.RECEIVED,
+  },
+  {
+    status: ORDER_STATUS.READY,
+    title: "Listos",
+    next: ORDER_STATUS.DELIVERED,
+    nextLabel: "Entregar",
+    prev: ORDER_STATUS.PREPARING,
+  },
+  { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.READY },
+];
+
+export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[]; ticketSettings: TicketSettings }) {
+  const router = useRouter();
+  const knownIds = useRef<Set<string> | null>(null);
+  const [printQueue, setPrintQueue] = useState<TicketData[]>([]);
+  const printingRef = useRef(false);
+
+  useEffect(() => {
+    const currentIds = new Set(orders.map((o) => o.id));
+
+    if (knownIds.current) {
+      const newReceived = orders.filter(
+        (o) => o.status === ORDER_STATUS.RECEIVED && !knownIds.current!.has(o.id)
+      );
+      for (const order of newReceived) {
+        toast.info(`Nuevo pedido #${order.number}`);
+      }
+      if (newReceived.length > 0) playNotificationSound();
+
+      // Los pedidos de autoservicio llegan solos, sin que nadie del local los haya cargado
+      // (a diferencia de Mostrador/Delivery, que ya imprimen al crear la venta) — por eso acá
+      // se imprimen automáticamente apenas aparecen.
+      const newSelfService = newReceived.filter((o) => o.channel === ORDER_CHANNEL.SELF_SERVICE);
+      if (newSelfService.length > 0) {
+        setPrintQueue((prev) => [...prev, ...newSelfService.map(toTicketData)]);
+      }
+    }
+
+    knownIds.current = currentIds;
+  }, [orders]);
+
+  useEffect(() => {
+    if (printingRef.current || printQueue.length === 0) return;
+    printingRef.current = true;
+    const timer = setTimeout(() => {
+      setPrintQueue((prev) => prev.slice(1));
+      printingRef.current = false;
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [printQueue]);
+
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), 12000);
+    return () => clearInterval(interval);
+  }, [router]);
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {columns.map((col) => {
+        const columnOrders = orders.filter((o) => o.status === col.status);
+        return (
+          <div key={col.status} className="flex flex-col gap-3 rounded-2xl bg-muted/40 p-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-sm font-semibold">{col.title}</h3>
+              <span className="text-xs text-muted-foreground">{columnOrders.length}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {columnOrders.length === 0 ? (
+                <p className="rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
+                  Sin pedidos
+                </p>
+              ) : (
+                columnOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    prevStatus={col.prev}
+                    nextStatus={col.next}
+                    nextLabel={col.nextLabel}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      <TicketView ticket={printQueue[0] ?? null} settings={ticketSettings} onClose={() => {}} silent />
+    </div>
+  );
+}
