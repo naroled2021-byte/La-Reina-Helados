@@ -2,7 +2,7 @@
 // Un solo hue de marca para series únicas; orden categórico fijo (no ciclado) para
 // series múltiples (ej. métodos de pago), tomado del set validado por defecto.
 
-export const singleSeriesColor = { light: "#EE7FAC", dark: "#F49AC1" };
+export const singleSeriesColor = { light: "#E63946", dark: "#F2707A" };
 
 export const categoricalPalette = {
   light: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"],
