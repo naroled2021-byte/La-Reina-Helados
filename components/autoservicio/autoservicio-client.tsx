@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IceCreamOrderPanel } from "@/components/delivery/ice-cream-order-panel";
+import { IceCreamOrderPanel } from "@/components/autoservicio/ice-cream-order-panel";
 import { createSelfServiceOrder } from "@/lib/actions/self-service-actions";
 import { currency } from "@/lib/format";
 import { ORDER_TYPE_LABEL } from "@/lib/constants";

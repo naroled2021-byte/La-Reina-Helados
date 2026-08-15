@@ -4,9 +4,7 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const isProtectedRoute =
-    req.nextUrl.pathname.startsWith("/admin") ||
-    req.nextUrl.pathname.startsWith("/mostrador") ||
-    req.nextUrl.pathname.startsWith("/delivery");
+    req.nextUrl.pathname.startsWith("/admin") || req.nextUrl.pathname.startsWith("/mostrador");
 
   if (isProtectedRoute && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -16,5 +14,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/mostrador/:path*", "/delivery/:path*"],
+  matcher: ["/admin/:path*", "/mostrador/:path*"],
 };

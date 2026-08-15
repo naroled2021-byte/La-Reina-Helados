@@ -14,7 +14,6 @@ import {
   Settings,
   MonitorSmartphone,
   Store,
-  Bike,
 } from "lucide-react";
 
 export type NavItem = {
@@ -29,7 +28,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, available: true },
   { label: "Ventas", href: "/admin/ventas", icon: ShoppingCart, permission: "sales.create", available: true },
   { label: "Mostrador", href: "/mostrador", icon: Store, permission: "sales.create", available: true },
-  { label: "Delivery", href: "/delivery", icon: Bike, permission: "sales.create", available: true },
   { label: "Pedidos", href: "/admin/pedidos", icon: ClipboardList, permission: "orders.manage", available: true },
   { label: "Productos", href: "/admin/productos", icon: IceCreamCone, permission: "products.manage", available: true },
   { label: "Sabores", href: "/admin/sabores", icon: Snowflake, permission: "products.manage", available: true },
