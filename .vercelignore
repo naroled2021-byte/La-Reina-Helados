@@ -1,0 +1,7 @@
+.env
+.env.local
+.env.production.local
+.env.development.local
+prisma/dev.db
+prisma/dev.db-journal
+.claude
