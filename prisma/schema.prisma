@@ -1,16 +1,19 @@
 // La Reina Helados — schema completo del dominio.
-// Motor actual: SQLite (desarrollo, cero instalación). Para producción, cambiar
-// `provider` a "postgresql" y `DATABASE_URL` en .env — el resto del código no cambia.
-// Nota: SQLite no soporta `enum` en Prisma, por eso los campos de estado son
-// String validados con los enums de TypeScript en lib/constants.ts.
+// Motor: Postgres (Neon, vía la integración de Vercel). DATABASE_URL es la conexión
+// pooled (pgbouncer) que usa la app; DATABASE_URL_UNPOOLED es la conexión directa que
+// necesita `prisma migrate` (el pooler en modo transacción no soporta advisory locks).
+// Nota: los campos de estado siguen siendo String (no enum) por compatibilidad con el
+// schema original de SQLite usado en desarrollo — los enums de TypeScript están en
+// lib/constants.ts.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ---------- Usuarios, roles y permisos ----------
