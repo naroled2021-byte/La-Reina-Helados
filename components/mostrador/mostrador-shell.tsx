@@ -22,7 +22,7 @@ export function MostradorShell({ userName, children }: { userName: string; child
       <header className="sticky top-0 z-40 flex items-center gap-2 bg-primary px-4 py-3 text-primary-foreground shadow-sm">
         <div className="size-8 shrink-0 overflow-hidden rounded-xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpeg" alt="La Reina Helados" className="size-full object-cover" />
+          <img src="/logo2.png" alt="La Reina Helados" className="size-full object-contain" />
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-semibold leading-tight">Artículos</h1>

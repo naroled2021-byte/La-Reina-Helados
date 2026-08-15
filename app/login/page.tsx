@@ -46,7 +46,7 @@ function LoginForm() {
       <CardHeader className="items-center text-center gap-2">
         <div className="size-16 overflow-hidden rounded-3xl">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpeg" alt="La Reina Helados" className="size-full object-cover" />
+          <img src="/logo2.png" alt="La Reina Helados" className="size-full object-contain" />
         </div>
         <CardTitle className="text-2xl">La Reina Helados</CardTitle>
         <CardDescription>Ingresá a tu panel de gestión</CardDescription>

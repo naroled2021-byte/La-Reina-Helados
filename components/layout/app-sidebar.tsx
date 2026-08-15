@@ -26,7 +26,7 @@ export function AppSidebar({ permissions }: { permissions: string[] }) {
         <div className="flex items-center gap-2 px-2 py-1.5">
           <div className="size-9 shrink-0 overflow-hidden rounded-2xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.jpeg" alt="La Reina Helados" className="size-full object-cover" />
+            <img src="/logo2.png" alt="La Reina Helados" className="size-full object-contain" />
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="font-semibold text-sm">La Reina Helados</span>

@@ -5,7 +5,7 @@ export function AutoservicioShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-6xl items-center gap-4">
           <div className="size-16 shrink-0 overflow-hidden rounded-2xl ring-2 ring-primary-foreground/30 sm:size-20">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.jpeg" alt="La Reina Helados" className="size-full object-cover" />
+            <img src="/logo2.png" alt="La Reina Helados" className="size-full object-contain" />
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold leading-tight sm:text-3xl">La Reina Helados</h1>
