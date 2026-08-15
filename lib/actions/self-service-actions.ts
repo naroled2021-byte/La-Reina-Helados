@@ -101,6 +101,7 @@ export async function createSelfServiceOrder(
           cashRegisterId: openRegister.id,
           type: CASH_MOVEMENT_TYPE.SALE_CASH,
           amount: total,
+          paymentMethod: PAYMENT_METHOD.CASH,
           description: `Venta pedido #${order.number} (autoservicio)`,
           userId: null,
           orderId: order.id,

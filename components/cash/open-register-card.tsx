@@ -10,10 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { openCashRegister } from "@/lib/actions/cash-actions";
+import { PAYMENT_METHOD } from "@/lib/constants";
+import type { CashPaymentMethod } from "@/components/cash/types";
 
-export function OpenRegisterCard() {
+export function OpenRegisterCard({ paymentMethods }: { paymentMethods: CashPaymentMethod[] }) {
   const router = useRouter();
-  const [openingAmount, setOpeningAmount] = useState("20000");
+  const [amounts, setAmounts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(paymentMethods.map((m) => [m.key, m.key === PAYMENT_METHOD.CASH ? "20000" : "0"]))
+  );
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -22,7 +26,10 @@ export function OpenRegisterCard() {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const res = await openCashRegister({ openingAmount: openingAmount as never, notes });
+      const openingAmounts = Object.fromEntries(
+        Object.entries(amounts).map(([key, value]) => [key, Number(value) || 0])
+      );
+      const res = await openCashRegister({ openingAmounts, notes });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -43,18 +50,22 @@ export function OpenRegisterCard() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="openingAmount">Efectivo inicial</Label>
-            <Input
-              id="openingAmount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={openingAmount}
-              onChange={(e) => setOpeningAmount(e.target.value)}
-              required
-              autoFocus
-            />
+          <div className="flex flex-col gap-3">
+            {paymentMethods.map((m, i) => (
+              <div key={m.key} className="flex flex-col gap-1.5">
+                <Label htmlFor={`amount-${m.key}`}>{m.label} inicial</Label>
+                <Input
+                  id={`amount-${m.key}`}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amounts[m.key] ?? "0"}
+                  onChange={(e) => setAmounts((prev) => ({ ...prev, [m.key]: e.target.value }))}
+                  required
+                  autoFocus={i === 0}
+                />
+              </div>
+            ))}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="notes">Notas (opcional)</Label>

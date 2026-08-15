@@ -17,49 +17,64 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { closeCashRegister } from "@/lib/actions/cash-actions";
+import { sumAmounts } from "@/lib/cash-utils";
 import { currency } from "@/lib/format";
+import type { CashPaymentMethod } from "@/components/cash/types";
 
 export function CloseRegisterDialog({
   open,
   onOpenChange,
-  expected,
+  expectedByMethod,
+  paymentMethods,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  expected: number;
+  expectedByMethod: Record<string, number>;
+  paymentMethods: CashPaymentMethod[];
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
-        {open && <CloseForm expected={expected} onOpenChange={onOpenChange} />}
+        {open && (
+          <CloseForm expectedByMethod={expectedByMethod} paymentMethods={paymentMethods} onOpenChange={onOpenChange} />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
 function CloseForm({
-  expected,
+  expectedByMethod,
+  paymentMethods,
   onOpenChange,
 }: {
-  expected: number;
+  expectedByMethod: Record<string, number>;
+  paymentMethods: CashPaymentMethod[];
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [declaredAmount, setDeclaredAmount] = useState(String(expected));
+  const [declared, setDeclared] = useState<Record<string, string>>(() =>
+    Object.fromEntries(paymentMethods.map((m) => [m.key, String(expectedByMethod[m.key] ?? 0)]))
+  );
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const difference = useMemo(() => {
-    const declared = Number(declaredAmount);
-    return Number.isFinite(declared) ? declared - expected : 0;
-  }, [declaredAmount, expected]);
+  const expectedTotal = sumAmounts(expectedByMethod);
+  const declaredTotal = useMemo(
+    () => Object.values(declared).reduce((sum, v) => sum + (Number(v) || 0), 0),
+    [declared]
+  );
+  const totalDifference = declaredTotal - expectedTotal;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const res = await closeCashRegister({ declaredAmount: declaredAmount as never, notes });
+      const declaredAmounts = Object.fromEntries(
+        Object.entries(declared).map(([key, value]) => [key, Number(value) || 0])
+      );
+      const res = await closeCashRegister({ declaredAmounts, notes });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -78,35 +93,53 @@ function CloseForm({
     <>
       <DialogHeader>
         <DialogTitle>Cerrar caja — Arqueo</DialogTitle>
-        <DialogDescription>Efectivo esperado: {currency.format(expected)}</DialogDescription>
+        <DialogDescription>Total esperado: {currency.format(expectedTotal)}</DialogDescription>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="declaredAmount">Efectivo contado</Label>
-          <Input
-            id="declaredAmount"
-            type="number"
-            min="0"
-            step="0.01"
-            value={declaredAmount}
-            onChange={(e) => setDeclaredAmount(e.target.value)}
-            required
-            autoFocus
-          />
+        <div className="flex max-h-64 flex-col gap-3 overflow-y-auto pr-1">
+          {paymentMethods.map((m, i) => {
+            const methodDifference = (Number(declared[m.key]) || 0) - (expectedByMethod[m.key] ?? 0);
+            return (
+              <div key={m.key} className="flex flex-col gap-1.5">
+                <Label htmlFor={`declared-${m.key}`}>
+                  {m.label} contado{" "}
+                  <span className="text-xs text-muted-foreground">
+                    (esperado: {currency.format(expectedByMethod[m.key] ?? 0)})
+                  </span>
+                </Label>
+                <Input
+                  id={`declared-${m.key}`}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={declared[m.key] ?? "0"}
+                  onChange={(e) => setDeclared((prev) => ({ ...prev, [m.key]: e.target.value }))}
+                  required
+                  autoFocus={i === 0}
+                />
+                {Math.abs(methodDifference) >= 0.01 && (
+                  <p className={`text-xs ${methodDifference > 0 ? "text-primary" : "text-destructive"}`}>
+                    Diferencia: {methodDifference >= 0 ? "+" : ""}
+                    {currency.format(methodDifference)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <div
           className={`rounded-lg px-3 py-2 text-sm font-medium ${
-            Math.abs(difference) < 0.01
+            Math.abs(totalDifference) < 0.01
               ? "bg-secondary/40 text-secondary-foreground"
-              : difference > 0
+              : totalDifference > 0
                 ? "bg-primary/10 text-primary"
                 : "bg-destructive/10 text-destructive"
           }`}
         >
-          Diferencia: {difference >= 0 ? "+" : ""}
-          {currency.format(difference)}
+          Diferencia total: {totalDifference >= 0 ? "+" : ""}
+          {currency.format(totalDifference)}
         </div>
 
         <div className="flex flex-col gap-1.5">

@@ -77,6 +77,7 @@ export async function createSale(
           cashRegisterId: openRegister.id,
           type: data.paymentMethod === PAYMENT_METHOD.CASH ? CASH_MOVEMENT_TYPE.SALE_CASH : CASH_MOVEMENT_TYPE.SALE_DIGITAL,
           amount: total,
+          paymentMethod: data.paymentMethod,
           description: `Venta pedido #${order.number}`,
           userId: session.user.id,
           orderId: order.id,

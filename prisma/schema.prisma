@@ -308,6 +308,13 @@ model CashRegister {
   status                 String    @default("OPEN") // OPEN | CLOSING | CLOSED
   notes                  String?
 
+  // Desglose por método de pago: { [paymentMethodKey]: monto }. Los campos de arriba
+  // (openingAmount, closingAmount*, difference) son la suma agregada de estos y se
+  // siguen llenando igual, para no romper Dashboard/Reportes que ya los leen.
+  openingAmounts         Json      @default("{}")
+  closingDeclaredAmounts Json?
+  closingExpectedAmounts Json?
+
   movements CashMovement[]
 }
 
@@ -317,6 +324,7 @@ model CashMovement {
   cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
   type           String       // SALE_CASH | SALE_DIGITAL | INCOME | EXPENSE
   amount         Float
+  paymentMethod  String?      // CASH | CARD | TRANSFER | QR | MERCADOPAGO | OTHER — null para INCOME/EXPENSE
   description    String?
   userId         String?
   user           User?        @relation(fields: [userId], references: [id])

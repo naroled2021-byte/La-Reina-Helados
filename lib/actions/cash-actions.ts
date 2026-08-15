@@ -11,7 +11,7 @@ import {
   type MovementInput,
   type CloseRegisterInput,
 } from "@/lib/validations/cash";
-import { computeExpectedCash } from "@/lib/cash-utils";
+import { computeExpectedByMethod, sumAmounts } from "@/lib/cash-utils";
 import { NOTIFICATION_TYPE } from "@/lib/constants";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -24,10 +24,12 @@ export async function openCashRegister(input: OpenRegisterInput): Promise<Action
   const existing = await db.cashRegister.findFirst({ where: { status: "OPEN" } });
   if (existing) return { ok: false, error: "Ya hay una caja abierta" };
 
+  const openingAmount = sumAmounts(parsed.data.openingAmounts);
   const register = await db.cashRegister.create({
     data: {
       openedById: session.user.id,
-      openingAmount: parsed.data.openingAmount,
+      openingAmount,
+      openingAmounts: parsed.data.openingAmounts,
       notes: parsed.data.notes || null,
       status: "OPEN",
     },
@@ -39,7 +41,7 @@ export async function openCashRegister(input: OpenRegisterInput): Promise<Action
       action: "cash.open",
       entity: "CashRegister",
       entityId: register.id,
-      metadata: JSON.stringify({ openingAmount: parsed.data.openingAmount }),
+      metadata: JSON.stringify({ openingAmounts: parsed.data.openingAmounts }),
     },
   });
 
@@ -92,8 +94,13 @@ export async function closeCashRegister(input: CloseRegisterInput): Promise<Acti
   });
   if (!register) return { ok: false, error: "No hay una caja abierta" };
 
-  const expected = computeExpectedCash(register.openingAmount, register.movements);
-  const difference = parsed.data.declaredAmount - expected;
+  const expectedByMethod = computeExpectedByMethod(
+    register.openingAmounts as Record<string, number>,
+    register.movements
+  );
+  const expected = sumAmounts(expectedByMethod);
+  const declared = sumAmounts(parsed.data.declaredAmounts);
+  const difference = declared - expected;
 
   await db.cashRegister.update({
     where: { id: register.id },
@@ -102,7 +109,9 @@ export async function closeCashRegister(input: CloseRegisterInput): Promise<Acti
       closedById: session.user.id,
       closedAt: new Date(),
       closingAmountExpected: expected,
-      closingAmountDeclared: parsed.data.declaredAmount,
+      closingAmountDeclared: declared,
+      closingExpectedAmounts: expectedByMethod,
+      closingDeclaredAmounts: parsed.data.declaredAmounts,
       difference,
       notes: parsed.data.notes || register.notes,
     },
@@ -125,7 +134,7 @@ export async function closeCashRegister(input: CloseRegisterInput): Promise<Acti
       action: "cash.close",
       entity: "CashRegister",
       entityId: register.id,
-      metadata: JSON.stringify({ expected, declared: parsed.data.declaredAmount, difference }),
+      metadata: JSON.stringify({ expected, declared, difference }),
     },
   });
 

@@ -2,6 +2,7 @@ export type CashMovementRow = {
   id: string;
   type: string;
   amount: number;
+  paymentMethod: string | null;
   description: string | null;
   userName: string | null;
   createdAt: string;
@@ -10,6 +11,7 @@ export type CashMovementRow = {
 export type OpenRegister = {
   id: string;
   openingAmount: number;
+  openingAmounts: Record<string, number>;
   openedAt: string;
   openedByName: string;
   movements: CashMovementRow[];
@@ -26,3 +28,5 @@ export type ClosedRegister = {
   openedByName: string;
   closedByName: string | null;
 };
+
+export type CashPaymentMethod = { key: string; label: string };
