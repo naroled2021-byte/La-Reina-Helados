@@ -26,18 +26,10 @@ WshShell.Run """${nodeExe.replace(/\\/g, "\\\\")}"" ""${distIndex.replace(/\\/g,
 `;
   writeFileSync(VBS_PATH, vbs, "utf-8");
 
-  await run("schtasks", [
-    "/create",
-    "/tn",
-    TASK_NAME,
-    "/tr",
-    `wscript.exe "${VBS_PATH}"`,
-    "/sc",
-    "onlogon",
-    "/rl",
-    "highest",
-    "/f",
-  ]);
+  // Sin /rl highest a propósito: imprimir no necesita permisos de administrador, y una
+  // tarea elevada solo se puede cerrar/depurar desde otra ventana también elevada — más
+  // difícil de gestionar el día de mañana sin ganar nada a cambio.
+  await run("schtasks", ["/create", "/tn", TASK_NAME, "/tr", `wscript.exe "${VBS_PATH}"`, "/sc", "onlogon", "/f"]);
 
   console.log(`Tarea programada "${TASK_NAME}" creada — el Print Agent va a arrancar solo al iniciar sesión en Windows.`);
   console.log(`Para probarlo ahora mismo sin reiniciar: doble click en start-hidden.vbs`);

@@ -4,6 +4,7 @@ import { fetchPendingJobs, sendHeartbeat } from "./api-client";
 import { processJob } from "./print-queue";
 import { startStatusServer } from "./status-server";
 import { state } from "./state";
+import { ensureSingleInstance } from "./single-instance";
 
 async function tick(): Promise<void> {
   try {
@@ -35,6 +36,7 @@ async function tick(): Promise<void> {
 
 async function main(): Promise<void> {
   assertEnvConfigured();
+  ensureSingleInstance();
   logger.info(`Print Agent iniciado — servidor: ${env.serverUrl}`);
 
   const { printerName } = loadLocalConfig();

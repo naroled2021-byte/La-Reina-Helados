@@ -45,14 +45,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ settings, jobs: [] });
   }
 
-  // Se marcan SENDING de una — así ningún pedido se entrega dos veces si el
-  // Print Agent hace más de una consulta seguida (o si hubiera dos agentes).
-  await db.printJob.updateMany({
-    where: { id: { in: pending.map((j) => j.id) } },
-    data: { status: "SENDING" },
-  });
+  // Reclamo uno por uno (no un updateMany en bloque): un UPDATE con status: "PENDING" en
+  // el WHERE es atómico por fila en Postgres, así que si dos Print Agents (o dos consultas
+  // superpuestas) leen el mismo PENDING al mismo tiempo, solo una de las dos gana la carrera
+  // por cada fila — la otra ve count 0 y no se lleva ese trabajo. Sin esto, un
+  // updateMany posterior a un findMany deja una ventana donde ambas consultas pueden
+  // entregar el mismo pedido dos veces (pasó de verdad: 3 copias del mismo ticket).
+  const claimed = [];
+  for (const job of pending) {
+    const result = await db.printJob.updateMany({
+      where: { id: job.id, status: "PENDING" },
+      data: { status: "SENDING" },
+    });
+    if (result.count === 1) claimed.push(job);
+  }
 
-  const jobs = pending.map((job) => {
+  const jobs = claimed.map((job) => {
     if (job.isTest || !job.order) {
       return { id: job.id, isTest: true, ticket: buildTestTicket() };
     }
