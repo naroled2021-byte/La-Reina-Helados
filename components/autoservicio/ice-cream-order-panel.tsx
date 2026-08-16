@@ -73,14 +73,14 @@ export function IceCreamOrderPanel({
 
   return (
     <div className="flex flex-1 flex-col gap-4 lg:flex-row">
-      <div className="flex shrink-0 flex-row gap-2 overflow-x-auto pb-1 lg:w-52 lg:flex-col lg:overflow-visible lg:pb-0">
+      <div className="flex shrink-0 flex-col gap-2 lg:w-52">
         {formats.map((f) => (
           <button
             key={f.id}
             type="button"
             onClick={() => selectFormat(f.id)}
             className={cn(
-              "flex shrink-0 flex-col items-start gap-0.5 rounded-2xl border px-4 py-3 text-left transition-colors lg:w-full",
+              "flex w-full flex-col items-start gap-0.5 rounded-2xl border px-4 py-3 text-left transition-colors",
               f.id === formatId ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-card hover:bg-muted"
             )}
           >
