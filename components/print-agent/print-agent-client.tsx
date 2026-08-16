@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { retryPrintJob } from "@/lib/actions/order-actions";
 import { createTestPrintJob } from "@/lib/actions/print-agent-actions";
+import { formatDateTime } from "@/lib/format";
 
 type PrintJobRow = {
   id: string;
@@ -97,7 +98,7 @@ export function PrintAgentClient({
               </p>
               <p className="text-xs text-muted-foreground">
                 {lastHeartbeat
-                  ? `Última señal: ${new Date(lastHeartbeat).toLocaleString("es-AR")}`
+                  ? `Última señal: ${formatDateTime(lastHeartbeat)}`
                   : "Todavía no se conectó ningún Print Agent"}
               </p>
             </div>
@@ -144,9 +145,7 @@ export function PrintAgentClient({
                     <Badge variant={STATUS_VARIANT[job.status] ?? "outline"}>{STATUS_LABEL[job.status] ?? job.status}</Badge>
                   </td>
                   <td className="px-4 py-2 tabular-nums">{job.attempts}</td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">
-                    {new Date(job.createdAt).toLocaleString("es-AR")}
-                  </td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground">{formatDateTime(job.createdAt)}</td>
                   <td className="max-w-48 truncate px-4 py-2 text-xs text-destructive">{job.lastError ?? ""}</td>
                   <td className="px-4 py-2 text-right">
                     {job.orderId && (
