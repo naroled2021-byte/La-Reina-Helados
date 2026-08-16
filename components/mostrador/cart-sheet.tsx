@@ -74,16 +74,16 @@ export function CartSheet({
                     )}
                     <p className="text-xs text-muted-foreground">{currency.format(line.unitPrice)} c/u</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Button variant="outline" size="icon-xs" onClick={() => updateQuantity(line.key, -1)}>
-                      <Minus className="size-3" />
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Button variant="outline" size="icon-lg" onClick={() => updateQuantity(line.key, -1)}>
+                      <Minus className="size-4" />
                     </Button>
-                    <span className="w-5 text-center text-sm tabular-nums">{line.quantity}</span>
-                    <Button variant="outline" size="icon-xs" onClick={() => updateQuantity(line.key, 1)}>
-                      <Plus className="size-3" />
+                    <span className="w-6 text-center text-base tabular-nums">{line.quantity}</span>
+                    <Button variant="outline" size="icon-lg" onClick={() => updateQuantity(line.key, 1)}>
+                      <Plus className="size-4" />
                     </Button>
-                    <Button variant="ghost" size="icon-xs" onClick={() => removeLine(line.key)}>
-                      <Trash2 className="size-3 text-destructive" />
+                    <Button variant="ghost" size="icon-lg" onClick={() => removeLine(line.key)}>
+                      <Trash2 className="size-4 text-destructive" />
                     </Button>
                   </div>
                 </div>

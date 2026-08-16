@@ -50,7 +50,7 @@ export function MostradorShell({ userName, children }: { userName: string; child
         </DropdownMenu>
       </header>
 
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-3 pb-20 pt-3">{children}</main>
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-3 pb-20 pt-3 sm:max-w-3xl">{children}</main>
 
       <AdminAccessDialog open={adminAccessOpen} onOpenChange={setAdminAccessOpen} />
     </div>

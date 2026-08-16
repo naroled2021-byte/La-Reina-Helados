@@ -50,7 +50,7 @@ export function TileGrid({
           type="button"
           onClick={() => setCategoryFilter("all")}
           className={cn(
-            "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+            "shrink-0 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors",
             categoryFilter === "all" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
           )}
         >
@@ -62,7 +62,7 @@ export function TileGrid({
             type="button"
             onClick={() => setCategoryFilter(id)}
             className={cn(
-              "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
+              "shrink-0 rounded-full border px-4 py-2.5 text-sm font-medium transition-colors",
               categoryFilter === id ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
             )}
           >
@@ -77,7 +77,7 @@ export function TileGrid({
           <p className="text-sm text-muted-foreground">Probá con otra búsqueda o categoría.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
           {filtered.map((product) => (
             <button
               key={product.id}
