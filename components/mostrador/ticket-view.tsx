@@ -193,6 +193,7 @@ export function TicketView({
   silent?: boolean;
 }) {
   useEffect(() => {
+    console.log("[ticket-debug] effect fired, ticket:", ticket?.number, "silent:", silent);
     if (!ticket) return;
     let cancelled = false;
     let triggered = false;
@@ -204,9 +205,13 @@ export function TicketView({
     const triggerPrints = () => {
       if (triggered || cancelled) return;
       triggered = true;
+      console.log("[ticket-debug] calling window.print() (1st copy) for order", ticket.number);
       window.print();
       setTimeout(() => {
-        if (!cancelled) window.print();
+        if (!cancelled) {
+          console.log("[ticket-debug] calling window.print() (2nd copy) for order", ticket.number);
+          window.print();
+        }
       }, 1800);
     };
 

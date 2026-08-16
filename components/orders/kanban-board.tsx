@@ -59,11 +59,13 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
 
   useEffect(() => {
     const currentIds = new Set(orders.map((o) => o.id));
+    console.log("[pedidos-debug] poll tick, orders:", orders.map((o) => `#${o.number}(${o.status}/${o.channel})`));
 
     if (knownIds.current) {
       const newReceived = orders.filter(
         (o) => o.status === ORDER_STATUS.RECEIVED && !knownIds.current!.has(o.id)
       );
+      console.log("[pedidos-debug] newReceived:", newReceived.map((o) => `#${o.number}`));
       for (const order of newReceived) {
         toast.info(`Nuevo pedido #${order.number}`);
       }
@@ -73,18 +75,25 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
       // (a diferencia de Mostrador/Delivery, que ya imprimen al crear la venta) — por eso acá
       // se imprimen automáticamente apenas aparecen.
       const newSelfService = newReceived.filter((o) => o.channel === ORDER_CHANNEL.SELF_SERVICE);
+      console.log("[pedidos-debug] newSelfService:", newSelfService.map((o) => `#${o.number}`));
       if (newSelfService.length > 0) {
         setPrintQueue((prev) => [...prev, ...newSelfService.map(toTicketData)]);
+        console.log("[pedidos-debug] queued for print:", newSelfService.map((o) => o.number));
       }
+    } else {
+      console.log("[pedidos-debug] first mount, marking all as known, none will print");
     }
 
     knownIds.current = currentIds;
   }, [orders]);
 
   useEffect(() => {
+    console.log("[pedidos-debug] printQueue changed, length:", printQueue.length, "printingRef:", printingRef.current);
     if (printingRef.current || printQueue.length === 0) return;
     printingRef.current = true;
+    console.log("[pedidos-debug] starting print for order:", printQueue[0]?.number);
     const timer = setTimeout(() => {
+      console.log("[pedidos-debug] advancing print queue past order:", printQueue[0]?.number);
       setPrintQueue((prev) => prev.slice(1));
       printingRef.current = false;
     }, 5000);
@@ -92,7 +101,11 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
   }, [printQueue]);
 
   useEffect(() => {
-    const interval = setInterval(() => router.refresh(), 12000);
+    console.log("[pedidos-debug] polling started, refreshing every 12s");
+    const interval = setInterval(() => {
+      console.log("[pedidos-debug] router.refresh() called");
+      router.refresh();
+    }, 12000);
     return () => clearInterval(interval);
   }, [router]);
 
