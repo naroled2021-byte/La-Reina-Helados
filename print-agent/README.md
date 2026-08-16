@@ -66,3 +66,15 @@ sistema — útil para probar solamente la impresora/cable).
    cable/driver en Windows, no de este programa — probá una "Impresión de prueba" directa
    desde **Configuración de Windows → Impresoras y escáneres → (tu impresora) → Imprimir
    página de prueba** para confirmar si el problema es previo a este Agent.
+4. Si el Agent dice "No autorizado" (401) al consultar al servidor: el `PRINT_AGENT_TOKEN`
+   de este `.env` no coincide con el que tiene guardado Vercel. Para cambiarlo, mejor
+   hacerlo desde el dashboard de Vercel (Project Settings → Environment Variables) pegando
+   el valor a mano, en vez de por la CLI con un pipe — un pipe de PowerShell puede colar un
+   carácter invisible al final y el token deja de coincidir aunque se vea igual.
+
+## Nota sobre el logo
+
+El logo se desactivó por defecto (`PRINT_LOGO=false`) porque la impresora XP-58 de este
+local no interpreta el comando de imagen ESC/POS y lo imprime como texto basura en vez del
+logo — es una limitación de esa impresora, no de este programa. El ticket de texto (nombre,
+pedido, ítems, total) ya se probó completo en papel real y sale perfecto.
