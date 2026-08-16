@@ -14,6 +14,7 @@ import {
   Settings,
   MonitorSmartphone,
   Store,
+  Printer,
 } from "lucide-react";
 
 export type NavItem = {
@@ -38,5 +39,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Empleados", href: "/admin/empleados", icon: UserCog, permission: "employees.manage", available: true },
   { label: "Reportes", href: "/admin/reportes", icon: BarChart3, permission: "reports.view", available: true },
   { label: "Autoservicio", href: "/autoservicio", icon: MonitorSmartphone, available: true },
+  { label: "Impresión", href: "/admin/impresion", icon: Printer, permission: "settings.manage", available: true },
   { label: "Configuración", href: "/admin/configuracion", icon: Settings, permission: "settings.manage", available: true },
 ];

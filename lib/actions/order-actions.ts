@@ -69,3 +69,26 @@ export async function updateOrderPaymentMethod(orderId: string, method: string):
   revalidatePath("/admin/pedidos");
   return { ok: true, data: undefined };
 }
+
+export async function retryPrintJob(orderId: string): Promise<ActionResult> {
+  const session = await requirePermission("orders.manage");
+
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order) return { ok: false, error: "Pedido no encontrado" };
+
+  await db.printJob.create({ data: { orderId } });
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "order.reprint",
+      entity: "Order",
+      entityId: orderId,
+      metadata: JSON.stringify({ number: order.number }),
+    },
+  });
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin/impresion");
+  return { ok: true, data: undefined };
+}
