@@ -4,18 +4,20 @@ import { verifyPrintAgentToken } from "@/lib/print-agent-auth";
 import { getTicketSettings } from "@/lib/queries/settings";
 import { PAYMENT_METHOD_LABEL, ORDER_TYPE } from "@/lib/constants";
 
-const TEST_TICKET = {
-  number: 0,
-  createdAt: new Date().toISOString(),
-  items: [{ productName: "Prueba de impresión", quantity: 1, unitPrice: 0, flavorNames: [] as string[] }],
-  subtotal: 0,
-  discount: 0,
-  total: 0,
-  paymentMethodLabel: "-",
-  orderType: ORDER_TYPE.TAKEAWAY,
-  customerName: null as string | null,
-  deliveryAddress: null as string | null,
-};
+function buildTestTicket() {
+  return {
+    number: 0,
+    createdAt: new Date().toISOString(),
+    items: [{ productName: "Prueba de impresión", quantity: 1, unitPrice: 0, flavorNames: [] as string[] }],
+    subtotal: 0,
+    discount: 0,
+    total: 0,
+    paymentMethodLabel: "-",
+    orderType: ORDER_TYPE.TAKEAWAY,
+    customerName: null as string | null,
+    deliveryAddress: null as string | null,
+  };
+}
 
 export async function GET(req: NextRequest) {
   if (!verifyPrintAgentToken(req)) {
@@ -52,7 +54,7 @@ export async function GET(req: NextRequest) {
 
   const jobs = pending.map((job) => {
     if (job.isTest || !job.order) {
-      return { id: job.id, isTest: true, ticket: TEST_TICKET };
+      return { id: job.id, isTest: true, ticket: buildTestTicket() };
     }
     const order = job.order;
     const paymentMethod = order.payments[0]?.method ?? null;

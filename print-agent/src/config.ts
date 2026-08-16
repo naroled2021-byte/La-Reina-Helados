@@ -13,6 +13,11 @@ export const env = {
   token: process.env.PRINT_AGENT_TOKEN ?? "",
   pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 5000),
   statusPort: Number(process.env.STATUS_PORT ?? 9200),
+  // Muchas impresoras térmicas clon (como esta XP-58) no soportan el comando ESC/POS de
+  // imagen (GS v 0) y lo imprimen como texto basura en vez del logo. Por eso arranca
+  // desactivado — se puede probar activándolo con PRINT_LOGO=true en el .env si algún día
+  // se prueba con una impresora que sí lo soporte.
+  printLogo: process.env.PRINT_LOGO === "true",
 };
 
 export type LocalConfig = {

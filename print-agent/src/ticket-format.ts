@@ -1,6 +1,6 @@
 import path from "node:path";
 import { EscPosBuilder } from "./escpos";
-import { ROOT_DIR } from "./config";
+import { ROOT_DIR, env } from "./config";
 
 export type TicketItem = { productName: string; quantity: number; unitPrice: number; flavorNames: string[] };
 export type Ticket = {
@@ -87,12 +87,14 @@ export function buildTicketBuffer(ticket: Ticket, settings: TicketSettings): Buf
 
   const b = new EscPosBuilder();
   b.align("center");
-  try {
-    b.image(LOGO_PATH);
-  } catch {
-    // si falta el logo, seguimos igual — mejor imprimir el ticket sin logo que no imprimir nada
+  if (env.printLogo) {
+    try {
+      b.image(LOGO_PATH);
+    } catch {
+      // si falta el logo, seguimos igual — mejor imprimir el ticket sin logo que no imprimir nada
+    }
+    b.line();
   }
-  b.line();
 
   b.big(true);
   for (const l of centeredLines(settings.businessName, bigWidth)) b.line(l);
