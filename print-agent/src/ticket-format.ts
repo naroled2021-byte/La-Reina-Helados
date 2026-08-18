@@ -72,9 +72,11 @@ function itemRow(left: string, right: string, width: number): string[] {
   return [...wrapText(left, width), right.padStart(width)];
 }
 
-/** Arma los comandos ESC/POS del ticket completo, con el mismo layout que ya usa la
- *  app web (components/mostrador/ticket-view.tsx) para que ambos impresos luzcan iguales. */
-export function buildTicketBuffer(ticket: Ticket, settings: TicketSettings): Buffer {
+/** Arma el contenido de UNA copia del ticket (sin el corte final — eso lo decide quien
+ *  llama, porque entre dos copias va un separador en vez de un corte). Mismo layout que ya
+ *  usa la app web (components/mostrador/ticket-view.tsx) para que ambos impresos luzcan
+ *  iguales. */
+function appendReceiptBody(b: EscPosBuilder, ticket: Ticket, settings: TicketSettings): void {
   const width = CHAR_WIDTH[settings.paperWidth] ?? 19;
   const bigWidth = Math.floor(width / 1.3);
   const divider = "-".repeat(width);
@@ -85,7 +87,6 @@ export function buildTicketBuffer(ticket: Ticket, settings: TicketSettings): Buf
     minute: "2-digit",
   });
 
-  const b = new EscPosBuilder();
   b.align("center");
   if (env.printLogo) {
     try {
@@ -141,8 +142,26 @@ export function buildTicketBuffer(ticket: Ticket, settings: TicketSettings): Buf
   for (const raw of settings.ticketFooter.split("\n")) {
     for (const l of centeredLines(raw, width)) b.line(l);
   }
+}
 
-  b.feed(3);
+/** Arma el trabajo de impresión completo: dos copias del ticket (una para el local, una
+ *  para el cliente), con un separador bien visible entre las dos — esta impresora no corta
+ *  el papel sola, así que la línea de puntos es la que le indica a quien la usa dónde
+ *  arrancar a mano. */
+export function buildTicketBuffer(ticket: Ticket, settings: TicketSettings, copies = 2): Buffer {
+  const width = CHAR_WIDTH[settings.paperWidth] ?? 19;
+  const b = new EscPosBuilder();
+
+  for (let i = 0; i < copies; i++) {
+    appendReceiptBody(b, ticket, settings);
+    b.feed(2);
+    if (i < copies - 1) {
+      b.align("center");
+      b.line("· ".repeat(Math.floor(width / 2)));
+      b.feed(2);
+    }
+  }
+
   b.cut();
   return b.build();
 }
