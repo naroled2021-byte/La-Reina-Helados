@@ -1,11 +1,15 @@
 import { requirePermission } from "@/lib/auth-helpers";
 import { getSalesPageData } from "@/lib/queries/sales";
+import { getTicketSettings } from "@/lib/queries/settings";
 import { SalesClient } from "@/components/sales/sales-client";
 
 export default async function VentasPage() {
   await requirePermission("sales.create");
 
-  const { products, flavors, paymentMethods, customers, todaySales } = await getSalesPageData();
+  const [{ products, flavors, paymentMethods, customers, todaySales }, ticketSettings] = await Promise.all([
+    getSalesPageData(),
+    getTicketSettings(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6 pb-8">
@@ -38,6 +42,7 @@ export default async function VentasPage() {
           customerName: o.customer?.name ?? null,
           itemsSummary: o.items.map((it) => `${it.quantity}x ${it.product.name}`).join(", "),
         }))}
+        ticketSettings={ticketSettings}
       />
     </div>
   );
