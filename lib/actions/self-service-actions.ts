@@ -94,8 +94,6 @@ export async function createSelfServiceOrder(
       data: { orderId: order.id, method: PAYMENT_METHOD.CASH, amount: total },
     });
 
-    await tx.printJob.create({ data: { orderId: order.id } });
-
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
     if (openRegister) {
       await tx.cashMovement.create({

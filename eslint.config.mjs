@@ -12,9 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Proyecto Node.js separado (print-agent/), con su propio package.json y build —
-    // no forma parte de la app Next.js.
-    "print-agent/**",
   ]),
 ]);
 

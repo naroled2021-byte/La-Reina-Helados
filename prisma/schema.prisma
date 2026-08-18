@@ -244,22 +244,6 @@ model Order {
   items    OrderItem[]
   payments Payment[]
   cashMovements CashMovement[]
-  printJobs PrintJob[]
-}
-
-// ---------- Print Agent ----------
-
-model PrintJob {
-  id        String    @id @default(cuid())
-  orderId   String?
-  order     Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  isTest    Boolean   @default(false) // impresión de prueba desde el panel, sin pedido real
-  status    String    @default("PENDING") // PENDING | SENDING | PRINTED | ERROR
-  attempts  Int       @default(0)
-  lastError String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  printedAt DateTime?
 }
 
 model OrderItem {

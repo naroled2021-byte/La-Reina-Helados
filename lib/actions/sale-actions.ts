@@ -70,8 +70,6 @@ export async function createSale(
       data: { orderId: order.id, method: data.paymentMethod, amount: total },
     });
 
-    await tx.printJob.create({ data: { orderId: order.id } });
-
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
     if (openRegister) {
       await tx.cashMovement.create({
