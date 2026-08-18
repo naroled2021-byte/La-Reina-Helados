@@ -22,7 +22,15 @@ export async function getTicketSettings() {
   const rows = await db.setting.findMany({
     where: {
       key: {
-        in: ["business.name", "business.address", "business.phone", "print.ticketHeader", "print.ticketFooter", "print.paperWidth"],
+        in: [
+          "business.name",
+          "business.address",
+          "business.phone",
+          "print.ticketHeader",
+          "print.ticketFooter",
+          "print.paperWidth",
+          "print.copies",
+        ],
       },
     },
   });
@@ -34,6 +42,7 @@ export async function getTicketSettings() {
     ticketHeader: map["print.ticketHeader"] || "",
     ticketFooter: map["print.ticketFooter"] || "¡Gracias por tu compra!",
     paperWidth: map["print.paperWidth"] || "80mm",
+    copies: Number(map["print.copies"]) || 2,
   };
 }
 

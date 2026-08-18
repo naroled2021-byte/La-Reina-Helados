@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export type TicketSettings = {
   ticketHeader: string;
   ticketFooter: string;
   paperWidth: string;
+  copies: number;
 };
 
 const CHAR_WIDTH: Record<string, number> = { "58mm": 19, "80mm": 28 };
@@ -89,10 +90,13 @@ function ReceiptBody({
   ticket,
   settings,
   logoSrc,
+  copyLabel,
 }: {
   ticket: TicketData;
   settings: TicketSettings;
   logoSrc: string;
+  /** "COPIA 1/2", etc. — solo se muestra cuando se imprime más de una copia. */
+  copyLabel?: string;
 }) {
   const width = CHAR_WIDTH[settings.paperWidth] ?? 32;
   const bigWidth = Math.floor(width / 1.3);
@@ -175,6 +179,15 @@ function ReceiptBody({
             <Line key={i} text={l} />
           ))}
       </div>
+
+      {copyLabel && (
+        <div className="flex w-full flex-col items-center text-center">
+          <Line text={divider} />
+          {centeredLines(copyLabel, width).map((l, i) => (
+            <Line key={i} text={l} big />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -192,27 +205,38 @@ export function TicketView({
    *  Para imprimir pedidos que llegan solos (autoservicio) sin interrumpir a nadie con un popup. */
   silent?: boolean;
 }) {
+  const totalCopies = Math.max(1, settings.copies || 2);
+  const [printCopyIndex, setPrintCopyIndex] = useState(1);
+
   useEffect(() => {
     console.log("[ticket-debug] effect fired, ticket:", ticket?.number, "silent:", silent);
     if (!ticket) return;
     let cancelled = false;
     let triggered = false;
 
-    // Dos trabajos de impresión separados (no dos copias apiladas en un mismo trabajo):
-    // la copia que sale "primera dentro del bloque" venía saliendo angosta en la impresora
-    // real (antes se notaba en el logo, después se notó en el texto), así que ahora cada
-    // copia es su propio trabajo de impresión completo, sin ser "la primera de nada".
+    // Cada copia es su propio trabajo de impresión completo (no varias copias apiladas en
+    // un mismo trabajo: la que salía "primera dentro del bloque" venía angosta en la
+    // impresora real). El número de copia se pinta en el ticket (copyLabel) ANTES de cada
+    // window.print(), por eso se espera un par de frames entre setear el estado e imprimir.
+    const printCopy = (copy: number) => {
+      if (cancelled) return;
+      setPrintCopyIndex(copy);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (cancelled) return;
+          console.log(`[ticket-debug] calling window.print() copy ${copy}/${totalCopies} for order`, ticket.number);
+          window.print();
+          if (copy < totalCopies) {
+            setTimeout(() => printCopy(copy + 1), 1800);
+          }
+        });
+      });
+    };
+
     const triggerPrints = () => {
       if (triggered || cancelled) return;
       triggered = true;
-      console.log("[ticket-debug] calling window.print() (1st copy) for order", ticket.number);
-      window.print();
-      setTimeout(() => {
-        if (!cancelled) {
-          console.log("[ticket-debug] calling window.print() (2nd copy) for order", ticket.number);
-          window.print();
-        }
-      }, 1800);
+      printCopy(1);
     };
 
     // El logo va incrustado como datos (data URI), no como referencia a un archivo, así
@@ -241,8 +265,18 @@ export function TicketView({
   }, [ticket?.number]);
 
   function printAgain() {
-    window.print();
-    setTimeout(() => window.print(), 1800);
+    let copy = 1;
+    const next = () => {
+      setPrintCopyIndex(copy);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+          copy += 1;
+          if (copy <= totalCopies) setTimeout(next, 1800);
+        });
+      });
+    };
+    next();
   }
 
   return (
@@ -289,7 +323,12 @@ export function TicketView({
             {/* Margen en blanco al inicio, por las dudas: en algún momento el contenido
                 salía recortado arriba al empezar un trabajo de impresión. */}
             <div style={{ height: "6mm" }} aria-hidden />
-            <ReceiptBody ticket={ticket} settings={settings} logoSrc={LOGO_PRINT_DATA_URI} />
+            <ReceiptBody
+              ticket={ticket}
+              settings={settings}
+              logoSrc={LOGO_PRINT_DATA_URI}
+              copyLabel={totalCopies > 1 ? `COPIA ${printCopyIndex}/${totalCopies}` : undefined}
+            />
           </div>,
           document.body
         )}

@@ -81,6 +81,7 @@ export async function updatePrintSettings(input: PrintSettingsInput): Promise<Ac
     ["print.ticketHeader", d.ticketHeader || "", "print"],
     ["print.ticketFooter", d.ticketFooter || "", "print"],
     ["print.paperWidth", d.paperWidth, "print"],
+    ["print.copies", String(d.copies), "print"],
   ]);
 
   await db.auditLog.create({

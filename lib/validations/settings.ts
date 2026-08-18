@@ -25,6 +25,7 @@ export const printSettingsSchema = z.object({
   ticketHeader: z.string().trim().max(200).optional().or(z.literal("")),
   ticketFooter: z.string().trim().max(200).optional().or(z.literal("")),
   paperWidth: z.enum(["58mm", "80mm"]),
+  copies: z.coerce.number().int().min(1).max(4),
 });
 
 export const promotionSchema = z.object({
