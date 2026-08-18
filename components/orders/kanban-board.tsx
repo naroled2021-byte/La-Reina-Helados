@@ -87,6 +87,11 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
     knownIds.current = currentIds;
   }, [orders]);
 
+  function handleManualPrint(order: KanbanOrder) {
+    setPrintQueue((prev) => [...prev, toTicketData(order)]);
+    toast.info(`Imprimiendo pedido #${order.number}...`);
+  }
+
   useEffect(() => {
     console.log("[pedidos-debug] printQueue changed, length:", printQueue.length, "printingRef:", printingRef.current);
     if (printingRef.current || printQueue.length === 0) return;
@@ -132,6 +137,7 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
                     prevStatus={col.prev}
                     nextStatus={col.next}
                     nextLabel={col.nextLabel}
+                    onPrint={handleManualPrint}
                   />
                 ))
               )}

@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Ban, MapPin, MonitorSmartphone, Store, Truck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ban, MapPin, MonitorSmartphone, Printer, Store, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,11 +26,13 @@ export function OrderCard({
   prevStatus,
   nextStatus,
   nextLabel,
+  onPrint,
 }: {
   order: KanbanOrder;
   prevStatus: string | null;
   nextStatus: string | null;
   nextLabel: string | null;
+  onPrint: (order: KanbanOrder) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -136,6 +138,14 @@ export function OrderCard({
             <ArrowRight className="size-3.5" />
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => onPrint(order)}
+          aria-label="Imprimir pedido"
+        >
+          <Printer className="size-3.5" />
+        </Button>
         <Button
           variant="ghost"
           size="icon-sm"
