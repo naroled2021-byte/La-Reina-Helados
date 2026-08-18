@@ -72,6 +72,20 @@ function itemRow(left: string, right: string, width: number): string[] {
   return [...wrapText(left, width), right.padStart(width)];
 }
 
+/** Línea separadora entre las dos copias, tipo "--- CORTAR ACÁ ----", del mismo ancho que
+ *  el resto del ticket — esta impresora no corta sola, así que es la señal visual de dónde
+ *  arrancar el papel a mano. */
+function cutHereLine(width: number): string {
+  // Sin tilde a propósito: la "Á" hace que esta impresora entre en modo de
+  // caracteres de doble byte y corrompe toda la línea (probado en hardware real).
+  const label = " CORTAR ACA ";
+  if (label.length >= width) return label.trim();
+  const dashes = width - label.length;
+  const left = Math.floor(dashes / 2);
+  const right = dashes - left;
+  return "-".repeat(left) + label + "-".repeat(right);
+}
+
 /** Arma el contenido de UNA copia del ticket (sin el corte final — eso lo decide quien
  *  llama, porque entre dos copias va un separador en vez de un corte). Mismo layout que ya
  *  usa la app web (components/mostrador/ticket-view.tsx) para que ambos impresos luzcan
@@ -157,7 +171,7 @@ export function buildTicketBuffer(ticket: Ticket, settings: TicketSettings, copi
     b.feed(2);
     if (i < copies - 1) {
       b.align("center");
-      b.line("· ".repeat(Math.floor(width / 2)));
+      b.line(cutHereLine(width));
       b.feed(2);
     }
   }
