@@ -18,7 +18,6 @@ import {
 import { ProductPickerGrid } from "@/components/sales/product-picker-grid";
 import { FlavorPickerDialog } from "@/components/sales/flavor-picker-dialog";
 import { TodaySalesList } from "@/components/sales/today-sales-list";
-import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
 import { createSale } from "@/lib/actions/sale-actions";
 import { createCustomer } from "@/lib/actions/customer-actions";
 import { currency } from "@/lib/format";
@@ -40,18 +39,15 @@ export function SalesClient({
   paymentMethods,
   customers: initialCustomers,
   todaySales,
-  ticketSettings,
 }: {
   products: SaleProduct[];
   flavors: SaleFlavor[];
   paymentMethods: SalePaymentMethod[];
   customers: SaleCustomer[];
   todaySales: TodaySale[];
-  ticketSettings: TicketSettings;
 }) {
   const router = useRouter();
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [ticket, setTicket] = useState<TicketData | null>(null);
   const [pendingFlavorProduct, setPendingFlavorProduct] = useState<SaleProduct | null>(null);
   const [orderType, setOrderType] = useState<string>("DINE_IN");
   const [tableNumber, setTableNumber] = useState("");
@@ -181,18 +177,6 @@ export function SalesClient({
         return;
       }
       toast.success(`Venta #${res.data.number} confirmada — ${currency.format(res.data.total)}`);
-      setTicket({
-        number: res.data.number,
-        createdAt: new Date().toISOString(),
-        items: cart,
-        subtotal,
-        discount: discountValue,
-        total: res.data.total,
-        paymentMethodLabel: paymentMethods.find((m) => m.key === paymentMethod)?.label ?? PAYMENT_METHOD_LABEL[paymentMethod] ?? paymentMethod,
-        orderType,
-        customerName: customerId === "none" ? null : customers.find((c) => c.id === customerId)?.name ?? null,
-        deliveryAddress: orderType === "DELIVERY" ? deliveryAddress || null : null,
-      });
       resetCart();
       router.refresh();
     });
@@ -399,8 +383,6 @@ export function SalesClient({
         onCancel={() => setPendingFlavorProduct(null)}
         onConfirm={handleConfirmFlavors}
       />
-
-      <TicketView ticket={ticket} settings={ticketSettings} onClose={() => setTicket(null)} />
     </div>
 
       <div>

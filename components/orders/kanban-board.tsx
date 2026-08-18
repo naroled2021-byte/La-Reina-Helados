@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { OrderCard } from "@/components/orders/order-card";
 import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
 import { playNotificationSound } from "@/lib/notification-sound";
-import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import { ORDER_STATUS, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import type { KanbanOrder } from "@/components/orders/types";
 
 function toTicketData(order: KanbanOrder): TicketData {
@@ -71,14 +71,13 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
       }
       if (newReceived.length > 0) playNotificationSound();
 
-      // Los pedidos de autoservicio llegan solos, sin que nadie del local los haya cargado
-      // (a diferencia de Mostrador/Delivery, que ya imprimen al crear la venta) — por eso acá
-      // se imprimen automáticamente apenas aparecen.
-      const newSelfService = newReceived.filter((o) => o.channel === ORDER_CHANNEL.SELF_SERVICE);
-      console.log("[pedidos-debug] newSelfService:", newSelfService.map((o) => `#${o.number}`));
-      if (newSelfService.length > 0) {
-        setPrintQueue((prev) => [...prev, ...newSelfService.map(toTicketData)]);
-        console.log("[pedidos-debug] queued for print:", newSelfService.map((o) => o.number));
+      // Toda la impresión pasa por acá, sin importar desde qué pantalla o dispositivo se
+      // haya cargado el pedido (Mostrador, Ventas, Autoservicio) — es la única forma de que
+      // dispositivos sin impresora propia (como una tablet) terminen imprimiendo: el pedido
+      // viaja hasta la PC que sí tiene la impresora y esta ventana lo imprime por ellos.
+      if (newReceived.length > 0) {
+        setPrintQueue((prev) => [...prev, ...newReceived.map(toTicketData)]);
+        console.log("[pedidos-debug] queued for print:", newReceived.map((o) => o.number));
       }
     } else {
       console.log("[pedidos-debug] first mount, marking all as known, none will print");
@@ -97,20 +96,23 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
     if (printingRef.current || printQueue.length === 0) return;
     printingRef.current = true;
     console.log("[pedidos-debug] starting print for order:", printQueue[0]?.number);
+    // Tiene que sobrevivir a todas las copias configuradas (cada una con ~1.8s de por medio,
+    // ver ticket-view.tsx) antes de pasar al siguiente pedido de la cola.
+    const advanceDelay = 1500 + Math.max(1, ticketSettings.copies || 2) * 2000;
     const timer = setTimeout(() => {
       console.log("[pedidos-debug] advancing print queue past order:", printQueue[0]?.number);
       setPrintQueue((prev) => prev.slice(1));
       printingRef.current = false;
-    }, 5000);
+    }, advanceDelay);
     return () => clearTimeout(timer);
-  }, [printQueue]);
+  }, [printQueue, ticketSettings.copies]);
 
   useEffect(() => {
-    console.log("[pedidos-debug] polling started, refreshing every 12s");
+    console.log("[pedidos-debug] polling started, refreshing every 5s");
     const interval = setInterval(() => {
       console.log("[pedidos-debug] router.refresh() called");
       router.refresh();
-    }, 12000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [router]);
 

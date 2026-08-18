@@ -6,25 +6,21 @@ import { ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { TileGrid } from "@/components/mostrador/tile-grid";
 import { CartSheet } from "@/components/mostrador/cart-sheet";
-import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
 import { createSale } from "@/lib/actions/sale-actions";
 import { currency } from "@/lib/format";
-import { PAYMENT_METHOD_LABEL, ORDER_TYPE } from "@/lib/constants";
+import { ORDER_TYPE } from "@/lib/constants";
 import type { CartLine, SalePaymentMethod, SaleProduct } from "@/components/sales/types";
 
 export function ArticulosClient({
   products,
   paymentMethods,
-  ticketSettings,
 }: {
   products: SaleProduct[];
   paymentMethods: SalePaymentMethod[];
-  ticketSettings: TicketSettings;
 }) {
   const router = useRouter();
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [ticket, setTicket] = useState<TicketData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState(paymentMethods[0]?.key ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -91,17 +87,6 @@ export function ArticulosClient({
         return;
       }
       toast.success(`Pedido #${res.data.number} confirmado — ${currency.format(res.data.total)}`);
-      setTicket({
-        number: res.data.number,
-        createdAt: new Date().toISOString(),
-        items: cart,
-        subtotal: total,
-        discount: 0,
-        total: res.data.total,
-        paymentMethodLabel: paymentMethods.find((m) => m.key === paymentMethod)?.label ?? PAYMENT_METHOD_LABEL[paymentMethod] ?? paymentMethod,
-        orderType: ORDER_TYPE.TAKEAWAY,
-        customerName: null,
-      });
       setCart([]);
       setCartOpen(false);
       router.refresh();
@@ -126,8 +111,6 @@ export function ArticulosClient({
         isPending={isPending}
         onConfirm={handleConfirmSale}
       />
-
-      <TicketView ticket={ticket} settings={ticketSettings} onClose={() => setTicket(null)} />
 
       {itemCount > 0 && (
         <button
