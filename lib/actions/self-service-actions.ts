@@ -34,6 +34,12 @@ export async function createSelfServiceOrder(
   }, 0);
   const total = subtotal;
 
+  const change = data.cashTendered != null ? data.cashTendered - total : null;
+  const notes =
+    data.cashTendered != null
+      ? `Paga con $${data.cashTendered.toLocaleString("es-AR")}${change != null && change >= 0 ? ` (vuelto $${change.toLocaleString("es-AR")})` : ""}`
+      : null;
+
   const result = await db.$transaction(async (tx) => {
     let customer = await tx.customer.findFirst({ where: { phone: data.customerPhone } });
     if (customer) {
@@ -72,6 +78,7 @@ export async function createSelfServiceOrder(
         subtotal,
         discount: 0,
         total,
+        notes,
         items: {
           create: data.items.map((item) => {
             const product = productMap.get(item.productId)!;

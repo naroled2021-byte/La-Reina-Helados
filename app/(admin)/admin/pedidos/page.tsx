@@ -30,6 +30,7 @@ export default async function PedidosPage() {
           tableNumber: o.tableNumber,
           deliveryAddress: o.deliveryAddress,
           customerName: o.customer?.name ?? null,
+          notes: o.notes,
           paymentMethod: o.payments[0]?.method ?? null,
           orderItems: o.items.map((it) => ({
             productName: it.product.name,

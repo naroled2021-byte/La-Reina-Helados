@@ -21,6 +21,7 @@ export type TicketData = {
   orderType: string;
   customerName: string | null;
   deliveryAddress?: string | null;
+  notes?: string | null;
 };
 
 export type TicketSettings = {
@@ -139,6 +140,7 @@ function ReceiptBody({
         {ticket.customerName && <Line text={`Cliente: ${ticket.customerName}`} />}
         {ticket.deliveryAddress &&
           wrapText(`Dirección: ${ticket.deliveryAddress}`, width).map((l, i) => <Line key={i} text={l} />)}
+        {ticket.notes && wrapText(ticket.notes, width).map((l, i) => <Line key={i} text={l} big />)}
 
         <Line text={divider} />
         {ticket.items.map((line) => (

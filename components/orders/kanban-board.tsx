@@ -29,6 +29,7 @@ function toTicketData(order: KanbanOrder): TicketData {
     orderType: order.type,
     customerName: order.customerName,
     deliveryAddress: order.deliveryAddress,
+    notes: order.notes,
   };
 }
 

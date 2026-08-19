@@ -101,6 +101,7 @@ export function OrderCard({
       {order.deliveryAddress && (
         <p className="truncate text-xs text-muted-foreground">{order.deliveryAddress}</p>
       )}
+      {order.notes && <p className="text-xs font-medium text-amber-700">{order.notes}</p>}
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold tabular-nums">{currency.format(order.total)}</p>

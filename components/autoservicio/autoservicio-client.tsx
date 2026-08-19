@@ -54,6 +54,7 @@ export function AutoservicioClient({
     .join(" - ");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [cashTendered, setCashTendered] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -99,6 +100,7 @@ export function AutoservicioClient({
     setAddressReference("");
     setCustomerName("");
     setCustomerPhone("");
+    setCashTendered("");
     setConfirmed(null);
   }
 
@@ -123,6 +125,7 @@ export function AutoservicioClient({
         customerPhone,
         type: orderType as never,
         deliveryAddress,
+        cashTendered: cashTendered ? (Number(cashTendered) as never) : undefined,
         items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity, flavorIds: l.flavorIds })),
       });
 
@@ -275,6 +278,19 @@ export function AutoservicioClient({
           <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
             Pagás en efectivo al {orderType === "DELIVERY" ? "recibir tu pedido" : "retirarlo"}.
           </p>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="cashTendered">¿Con cuánto pagás? (opcional)</Label>
+            <Input
+              id="cashTendered"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={cashTendered}
+              onChange={(e) => setCashTendered(e.target.value)}
+              placeholder="Ej: 20000"
+            />
+          </div>
 
           <div className="flex flex-col gap-1 border-t pt-3 text-sm">
             <div className="flex justify-between text-base font-semibold">

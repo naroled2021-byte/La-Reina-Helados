@@ -7,6 +7,7 @@ export const selfServiceOrderSchema = z
     customerPhone: z.string().trim().min(6, "Ingresá un teléfono válido").max(30),
     type: z.enum(["TAKEAWAY", "DELIVERY"]),
     deliveryAddress: z.string().trim().max(200).optional().or(z.literal("")),
+    cashTendered: z.coerce.number().min(0).optional(),
     items: z.array(saleItemSchema).min(1, "Agregá al menos un producto"),
   })
   .refine((data) => data.type !== "DELIVERY" || !!data.deliveryAddress?.trim(), {
