@@ -58,11 +58,13 @@ export async function addCashMovement(input: MovementInput): Promise<ActionResul
   const register = await db.cashRegister.findFirst({ where: { status: "OPEN" } });
   if (!register) return { ok: false, error: "No hay una caja abierta" };
 
+  const amount = parsed.data.type === "MANUAL_OPEN" ? 0 : parsed.data.amount ?? 0;
+
   await db.cashMovement.create({
     data: {
       cashRegisterId: register.id,
       type: parsed.data.type,
-      amount: parsed.data.amount,
+      amount,
       description: parsed.data.description || null,
       userId: session.user.id,
     },
@@ -71,12 +73,23 @@ export async function addCashMovement(input: MovementInput): Promise<ActionResul
   await db.auditLog.create({
     data: {
       userId: session.user.id,
-      action: "cash.movement",
+      action: parsed.data.type === "MANUAL_OPEN" ? "cash.manual_open" : "cash.movement",
       entity: "CashRegister",
       entityId: register.id,
-      metadata: JSON.stringify({ type: parsed.data.type, amount: parsed.data.amount }),
+      metadata: JSON.stringify({ type: parsed.data.type, amount, description: parsed.data.description }),
     },
   });
+
+  if (parsed.data.type === "MANUAL_OPEN") {
+    await db.notification.create({
+      data: {
+        type: NOTIFICATION_TYPE.CASH_MANUAL_OPEN,
+        title: "Apertura manual de caja",
+        message: `${session.user.name ?? "Alguien"} abrió la caja sin venta: ${parsed.data.description}`,
+        link: "/admin/caja",
+      },
+    });
+  }
 
   revalidatePath("/admin/caja");
   revalidatePath("/admin");

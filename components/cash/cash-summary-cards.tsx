@@ -1,4 +1,4 @@
-import { TrendingDown, TrendingUp, Landmark } from "lucide-react";
+import { TrendingDown, TrendingUp, Landmark, DoorOpen } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { currency, formatCompactCurrency } from "@/lib/format";
 import { computeExpectedByMethod, sumAmounts, summarizeMovements } from "@/lib/cash-utils";
@@ -15,6 +15,7 @@ export function CashSummaryCards({
   const totals = summarizeMovements(register.movements);
   const expectedByMethod = computeExpectedByMethod(register.openingAmounts, register.movements);
   const expectedTotal = sumAmounts(expectedByMethod);
+  const manualOpens = register.movements.filter((m) => m.type === CASH_MOVEMENT_TYPE.MANUAL_OPEN).length;
 
   const salesByMethod: Record<string, number> = {};
   for (const m of register.movements) {
@@ -26,10 +27,11 @@ export function CashSummaryCards({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard label="Total inicial" value={formatCompactCurrency(sumAmounts(register.openingAmounts))} icon={Landmark} />
         <KpiCard label="Ingresos" value={formatCompactCurrency(totals.income)} icon={TrendingUp} />
         <KpiCard label="Egresos" value={formatCompactCurrency(totals.expense)} icon={TrendingDown} />
+        <KpiCard label="Aperturas manuales" value={String(manualOpens)} icon={DoorOpen} />
       </div>
 
       <div className="overflow-x-auto rounded-2xl border">

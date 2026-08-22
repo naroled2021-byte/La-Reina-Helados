@@ -1,4 +1,4 @@
-import { ArrowDownCircle, ArrowUpCircle, Banknote, CreditCard } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Banknote, CreditCard, DoorOpen } from "lucide-react";
 import { currency } from "@/lib/format";
 import { CASH_MOVEMENT_TYPE, CASH_MOVEMENT_TYPE_LABEL } from "@/lib/constants";
 import type { CashMovementRow } from "@/components/cash/types";
@@ -8,6 +8,7 @@ const icons: Record<string, typeof Banknote> = {
   SALE_DIGITAL: CreditCard,
   INCOME: ArrowUpCircle,
   EXPENSE: ArrowDownCircle,
+  MANUAL_OPEN: DoorOpen,
 };
 
 export function MovementsList({ movements }: { movements: CashMovementRow[] }) {
@@ -39,10 +40,12 @@ export function MovementsList({ movements }: { movements: CashMovementRow[] }) {
                 {new Date(m.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
-            <span className={`text-sm font-semibold tabular-nums ${isNegative ? "text-destructive" : ""}`}>
-              {isNegative ? "-" : "+"}
-              {currency.format(m.amount)}
-            </span>
+            {m.type !== CASH_MOVEMENT_TYPE.MANUAL_OPEN && (
+              <span className={`text-sm font-semibold tabular-nums ${isNegative ? "text-destructive" : ""}`}>
+                {isNegative ? "-" : "+"}
+                {currency.format(m.amount)}
+              </span>
+            )}
           </div>
         );
       })}

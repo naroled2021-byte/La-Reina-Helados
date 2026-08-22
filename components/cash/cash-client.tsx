@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, Lock } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, DoorOpen, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OpenRegisterCard } from "@/components/cash/open-register-card";
 import { CashSummaryCards } from "@/components/cash/cash-summary-cards";
@@ -21,7 +21,7 @@ export function CashClient({
   closedRegisters: ClosedRegister[];
   paymentMethods: CashPaymentMethod[];
 }) {
-  const [movementDialog, setMovementDialog] = useState<"INCOME" | "EXPENSE" | null>(null);
+  const [movementDialog, setMovementDialog] = useState<"INCOME" | "EXPENSE" | "MANUAL_OPEN" | null>(null);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
 
   if (!openRegister) {
@@ -52,6 +52,10 @@ export function CashClient({
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setMovementDialog("EXPENSE")}>
           <ArrowDownCircle className="size-4" />
           Registrar egreso
+        </Button>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setMovementDialog("MANUAL_OPEN")}>
+          <DoorOpen className="size-4" />
+          Registrar apertura manual
         </Button>
         <Button variant="destructive" size="sm" className="ml-auto gap-1.5" onClick={() => setCloseDialogOpen(true)}>
           <Lock className="size-4" />

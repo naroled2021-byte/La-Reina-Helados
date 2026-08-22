@@ -5,11 +5,20 @@ export const openRegisterSchema = z.object({
   notes: z.string().trim().max(300).optional().or(z.literal("")),
 });
 
-export const movementSchema = z.object({
-  type: z.enum(["INCOME", "EXPENSE"]),
-  amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
-  description: z.string().trim().max(200).optional().or(z.literal("")),
-});
+export const movementSchema = z
+  .object({
+    type: z.enum(["INCOME", "EXPENSE", "MANUAL_OPEN"]),
+    amount: z.coerce.number().min(0).optional(),
+    description: z.string().trim().max(200).optional().or(z.literal("")),
+  })
+  .refine((data) => data.type === "MANUAL_OPEN" || (data.amount ?? 0) > 0, {
+    message: "El monto debe ser mayor a 0",
+    path: ["amount"],
+  })
+  .refine((data) => data.type !== "MANUAL_OPEN" || !!data.description?.trim(), {
+    message: "Indicá el motivo de la apertura",
+    path: ["description"],
+  });
 
 export const closeRegisterSchema = z.object({
   declaredAmounts: z.record(z.string(), z.coerce.number().min(0, "No puede ser negativo")),

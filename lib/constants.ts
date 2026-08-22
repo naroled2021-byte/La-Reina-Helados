@@ -124,6 +124,11 @@ export const CASH_MOVEMENT_TYPE = {
   SALE_DIGITAL: "SALE_DIGITAL",
   INCOME: "INCOME",
   EXPENSE: "EXPENSE",
+  // Apertura de la caja fuera de una venta o de la apertura del día — no mueve dinero
+  // (amount siempre 0), es un registro para dejar constancia de por qué se abrió. No hay
+  // forma de detectar una apertura física no reportada (la caja no tiene sensor propio),
+  // así que esto es la versión honesta: autodeclarada por quien la abre, no "detectada".
+  MANUAL_OPEN: "MANUAL_OPEN",
 } as const;
 
 export const CASH_MOVEMENT_TYPE_LABEL: Record<string, string> = {
@@ -131,7 +136,12 @@ export const CASH_MOVEMENT_TYPE_LABEL: Record<string, string> = {
   SALE_DIGITAL: "Venta digital",
   INCOME: "Ingreso",
   EXPENSE: "Egreso",
+  MANUAL_OPEN: "Apertura manual",
 };
+
+export const INCOME_REASONS = ["Reposición de caja chica", "Vuelto devuelto", "Otro"] as const;
+export const EXPENSE_REASONS = ["Pago a proveedor", "Retiro de encargado", "Traslado de efectivo", "Gastos", "Otro"] as const;
+export const MANUAL_OPEN_REASONS = ["Dar vuelto", "Verificación", "Error de venta", "Otro"] as const;
 
 export const PROMOTION_TYPE = {
   TWO_FOR_ONE: "TWO_FOR_ONE",
@@ -152,6 +162,7 @@ export const NOTIFICATION_TYPE = {
   SALE_COMPLETED: "SALE_COMPLETED",
   CASH_CLOSED: "CASH_CLOSED",
   CASH_DIFFERENCE: "CASH_DIFFERENCE",
+  CASH_MANUAL_OPEN: "CASH_MANUAL_OPEN",
   OUT_OF_STOCK: "OUT_OF_STOCK",
 } as const;
 
