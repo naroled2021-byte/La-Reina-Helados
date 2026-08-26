@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -64,10 +64,15 @@ export function AuditClient() {
     fetchAuditFilterOptions().then(setFilterOptions);
   }, []);
 
-  const { data, loading } = useReportData(fetchAuditLog, [
-    range,
-    { userId: userId === "all" ? undefined : userId, action: action === "all" ? undefined : action, q: q || undefined },
-  ]);
+  const filters = useMemo(
+    () => ({
+      userId: userId === "all" ? undefined : userId,
+      action: action === "all" ? undefined : action,
+      q: q || undefined,
+    }),
+    [userId, action, q]
+  );
+  const { data, loading } = useReportData(fetchAuditLog, [range, filters]);
 
   const rows = data ?? [];
 
