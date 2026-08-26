@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { OrderCard } from "@/components/orders/order-card";
 import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
+import { logOrderReprint } from "@/lib/actions/order-actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { ORDER_STATUS, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import type { KanbanOrder } from "@/components/orders/types";
@@ -90,6 +91,7 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
   function handleManualPrint(order: KanbanOrder) {
     setPrintQueue((prev) => [...prev, toTicketData(order)]);
     toast.info(`Imprimiendo pedido #${order.number}...`);
+    void logOrderReprint(order.id);
   }
 
   useEffect(() => {

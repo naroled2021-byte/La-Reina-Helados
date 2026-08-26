@@ -8,14 +8,18 @@ import type { OpenRegister, CashPaymentMethod } from "@/components/cash/types";
 export function CashSummaryCards({
   register,
   paymentMethods,
+  cashLimit,
 }: {
   register: OpenRegister;
   paymentMethods: CashPaymentMethod[];
+  cashLimit: number | null;
 }) {
   const totals = summarizeMovements(register.movements);
   const expectedByMethod = computeExpectedByMethod(register.openingAmounts, register.movements);
   const expectedTotal = sumAmounts(expectedByMethod);
   const manualOpens = register.movements.filter((m) => m.type === CASH_MOVEMENT_TYPE.MANUAL_OPEN).length;
+  const cashOnly = (expectedByMethod[PAYMENT_METHOD.CASH] ?? 0);
+  const overLimit = !!cashLimit && cashOnly > cashLimit;
 
   const salesByMethod: Record<string, number> = {};
   for (const m of register.movements) {
@@ -27,6 +31,11 @@ export function CashSummaryCards({
 
   return (
     <div className="flex flex-col gap-4">
+      {overLimit && (
+        <div className="flex items-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+          🔴 El efectivo en caja (${cashOnly.toLocaleString("es-AR")}) superó el límite configurado (${cashLimit!.toLocaleString("es-AR")}).
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard label="Total inicial" value={formatCompactCurrency(sumAmounts(register.openingAmounts))} icon={Landmark} />
         <KpiCard label="Ingresos" value={formatCompactCurrency(totals.income)} icon={TrendingUp} />

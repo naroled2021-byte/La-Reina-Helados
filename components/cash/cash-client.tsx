@@ -9,6 +9,7 @@ import { MovementsList } from "@/components/cash/movements-list";
 import { AddMovementDialog } from "@/components/cash/add-movement-dialog";
 import { CloseRegisterDialog } from "@/components/cash/close-register-dialog";
 import { ClosuresHistory } from "@/components/cash/closures-history";
+import { CashLimitEditor } from "@/components/cash/cash-limit-editor";
 import { computeExpectedByMethod } from "@/lib/cash-utils";
 import type { CashPaymentMethod, ClosedRegister, OpenRegister } from "@/components/cash/types";
 
@@ -16,10 +17,12 @@ export function CashClient({
   openRegister,
   closedRegisters,
   paymentMethods,
+  cashLimit,
 }: {
   openRegister: OpenRegister | null;
   closedRegisters: ClosedRegister[];
   paymentMethods: CashPaymentMethod[];
+  cashLimit: number | null;
 }) {
   const [movementDialog, setMovementDialog] = useState<"INCOME" | "EXPENSE" | "MANUAL_OPEN" | null>(null);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
@@ -42,7 +45,8 @@ export function CashClient({
 
   return (
     <div className="flex flex-col gap-6">
-      <CashSummaryCards register={openRegister} paymentMethods={paymentMethods} />
+      <CashLimitEditor cashLimit={cashLimit} />
+      <CashSummaryCards register={openRegister} paymentMethods={paymentMethods} cashLimit={cashLimit} />
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setMovementDialog("INCOME")}>

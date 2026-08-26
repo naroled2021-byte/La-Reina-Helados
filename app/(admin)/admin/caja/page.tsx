@@ -6,11 +6,13 @@ import { CashClient } from "@/components/cash/cash-client";
 export default async function CajaPage() {
   await requirePermission("cash.manage");
 
-  const [{ openRegister, closedRegisters }, paymentMethodConfigs] = await Promise.all([
+  const [{ openRegister, closedRegisters }, paymentMethodConfigs, cashLimitSetting] = await Promise.all([
     getCashPageData(),
     db.paymentMethodConfig.findMany({ where: { enabled: true }, orderBy: { order: "asc" } }),
+    db.setting.findUnique({ where: { key: "cash.limit" } }),
   ]);
   const paymentMethods = paymentMethodConfigs.map((m) => ({ key: m.key, label: m.label }));
+  const cashLimit = cashLimitSetting?.value ? Number(cashLimitSetting.value) : null;
 
   return (
     <div className="flex flex-col gap-6 pb-8">
@@ -21,6 +23,7 @@ export default async function CajaPage() {
 
       <CashClient
         paymentMethods={paymentMethods}
+        cashLimit={cashLimit}
         openRegister={
           openRegister
             ? {

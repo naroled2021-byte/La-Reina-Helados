@@ -163,6 +163,7 @@ export const NOTIFICATION_TYPE = {
   CASH_CLOSED: "CASH_CLOSED",
   CASH_DIFFERENCE: "CASH_DIFFERENCE",
   CASH_MANUAL_OPEN: "CASH_MANUAL_OPEN",
+  CASH_LIMIT_EXCEEDED: "CASH_LIMIT_EXCEEDED",
   OUT_OF_STOCK: "OUT_OF_STOCK",
 } as const;
 
@@ -208,6 +209,7 @@ export const PERMISSION_LABEL: Record<string, string> = {
   "employees.manage": "Gestionar empleados",
   "reports.view": "Ver reportes",
   "settings.manage": "Gestionar configuración",
+  "audit.view": "Ver auditoría",
 };
 
 export const PERMISSION_MODULE_LABEL: Record<string, string> = {
@@ -222,6 +224,45 @@ export const PERMISSION_MODULE_LABEL: Record<string, string> = {
   employees: "Empleados",
   reports: "Reportes",
   settings: "Configuración",
+  audit: "Auditoría",
+};
+
+export const AUDIT_ACTION_LABEL: Record<string, string> = {
+  "auth.login": "Inicio de sesión",
+  "auth.logout": "Cierre de sesión",
+  "cash.open": "Caja abierta",
+  "cash.close": "Caja cerrada",
+  "cash.movement": "Movimiento de caja",
+  "cash.manual_open": "Apertura manual de caja",
+  "cash.alert_limit": "Alerta: caja excedió el límite",
+  "order.create": "Venta",
+  "order.self_service_create": "Venta (autoservicio)",
+  "order.cancel": "Venta anulada",
+  "order.status_change": "Cambio de estado de pedido",
+  "order.payment_method_change": "Cambio de método de pago",
+  "order.reprint": "Reimpresión de ticket",
+  "product.create": "Producto creado",
+  "product.update": "Producto actualizado",
+  "category.update": "Categoría actualizada",
+  "flavor.create": "Sabor creado",
+  "flavor.update": "Sabor actualizado",
+  "inventory.create": "Insumo creado",
+  "inventory.update": "Insumo actualizado",
+  "inventory.adjust_stock": "Ajuste de stock",
+  "production.create": "Lote de producción creado",
+  "production.record_item": "Producción registrada",
+  "customer.create": "Cliente creado",
+  "customer.update": "Cliente actualizado",
+  "employee.create": "Empleado creado",
+  "employee.update": "Empleado actualizado",
+  "employee.reset_password": "Contraseña restablecida",
+  "role.update_permissions": "Permisos de rol modificados",
+  "promotion.create": "Promoción creada",
+  "promotion.update": "Promoción actualizada",
+  "settings.update_general": "Configuración general actualizada",
+  "settings.update_print": "Configuración de impresión actualizada",
+  "settings.update_theme": "Configuración de apariencia actualizada",
+  "settings.update_cash_limit": "Límite de caja actualizado",
 };
 
 export const FLAVOR_CATEGORY_LABEL: Record<string, string> = {

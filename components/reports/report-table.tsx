@@ -4,10 +4,12 @@ export function ReportTable<T extends Record<string, unknown>>({
   columns,
   rows,
   emptyMessage = "Sin datos para este rango.",
+  onRowClick,
 }: {
   columns: ReportColumn<T>[];
   rows: T[];
   emptyMessage?: string;
+  onRowClick?: (row: T) => void;
 }) {
   if (rows.length === 0) {
     return (
@@ -31,7 +33,11 @@ export function ReportTable<T extends Record<string, unknown>>({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b last:border-0">
+            <tr
+              key={i}
+              className={`border-b last:border-0 ${onRowClick ? "cursor-pointer hover:bg-muted/40" : ""}`}
+              onClick={() => onRowClick?.(row)}
+            >
               {columns.map((c) => (
                 <td key={c.key} className="px-3 py-2">
                   {c.render ? c.render(row) : String(row[c.key] ?? "")}

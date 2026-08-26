@@ -70,3 +70,22 @@ export async function updateOrderPaymentMethod(orderId: string, method: string):
   return { ok: true, data: undefined };
 }
 
+export async function logOrderReprint(orderId: string): Promise<ActionResult> {
+  const session = await requirePermission("orders.manage");
+
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order) return { ok: false, error: "Pedido no encontrado" };
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "order.reprint",
+      entity: "Order",
+      entityId: orderId,
+      metadata: JSON.stringify({ number: order.number }),
+    },
+  });
+
+  return { ok: true, data: undefined };
+}
+

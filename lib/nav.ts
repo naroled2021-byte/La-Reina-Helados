@@ -14,6 +14,7 @@ import {
   Settings,
   MonitorSmartphone,
   Store,
+  ShieldCheck,
 } from "lucide-react";
 
 export type NavItem = {
@@ -37,6 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Clientes", href: "/admin/clientes", icon: Users, permission: "customers.manage", available: true },
   { label: "Empleados", href: "/admin/empleados", icon: UserCog, permission: "employees.manage", available: true },
   { label: "Reportes", href: "/admin/reportes", icon: BarChart3, permission: "reports.view", available: true },
+  { label: "Auditoría", href: "/admin/auditoria", icon: ShieldCheck, permission: "audit.view", available: true },
   { label: "Autoservicio", href: "/autoservicio", icon: MonitorSmartphone, available: true },
   { label: "Configuración", href: "/admin/configuracion", icon: Settings, permission: "settings.manage", available: true },
 ];

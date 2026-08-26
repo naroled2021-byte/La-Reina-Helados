@@ -6,6 +6,10 @@ import { db } from "@/lib/db";
 import { requireSession } from "@/lib/auth-helpers";
 
 export async function logoutAction() {
+  const session = await requireSession();
+  await db.auditLog.create({
+    data: { userId: session.user.id, action: "auth.logout", entity: "User", entityId: session.user.id },
+  });
   await signOut({ redirectTo: "/login" });
 }
 

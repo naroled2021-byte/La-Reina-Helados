@@ -11,10 +11,61 @@ import {
   type MovementInput,
   type CloseRegisterInput,
 } from "@/lib/validations/cash";
-import { computeExpectedByMethod, sumAmounts } from "@/lib/cash-utils";
+import { computeExpectedByMethod, computeExpectedCash, sumAmounts } from "@/lib/cash-utils";
 import { NOTIFICATION_TYPE } from "@/lib/constants";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
+
+async function checkCashLimit(registerId: string, session: { user: { id: string } }) {
+  const setting = await db.setting.findUnique({ where: { key: "cash.limit" } });
+  const limit = setting ? Number(setting.value) : null;
+  if (!limit || limit <= 0) return;
+
+  const register = await db.cashRegister.findUnique({
+    where: { id: registerId },
+    include: { movements: true },
+  });
+  if (!register) return;
+
+  const currentCash = computeExpectedCash(register.openingAmount, register.movements);
+  if (currentCash <= limit) return;
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "cash.alert_limit",
+      entity: "CashRegister",
+      entityId: registerId,
+      metadata: JSON.stringify({ amount: currentCash, limit }),
+    },
+  });
+
+  await db.notification.create({
+    data: {
+      type: NOTIFICATION_TYPE.CASH_LIMIT_EXCEEDED,
+      title: "Caja excedió el límite",
+      message: `El efectivo en caja ($${currentCash.toLocaleString("es-AR")}) superó el límite configurado ($${limit.toLocaleString("es-AR")})`,
+      link: "/admin/caja",
+    },
+  });
+}
+
+export async function updateCashLimit(limit: number | null): Promise<ActionResult> {
+  const session = await requirePermission("cash.manage");
+
+  await db.setting.upsert({
+    where: { key: "cash.limit" },
+    create: { key: "cash.limit", value: limit ? String(limit) : "", group: "cash" },
+    update: { value: limit ? String(limit) : "" },
+  });
+
+  await db.auditLog.create({
+    data: { userId: session.user.id, action: "settings.update_cash_limit", entity: "Setting", metadata: JSON.stringify({ limit }) },
+  });
+
+  revalidatePath("/admin/caja");
+  return { ok: true, data: undefined };
+}
 
 export async function openCashRegister(input: OpenRegisterInput): Promise<ActionResult<{ id: string }>> {
   const session = await requirePermission("cash.manage");
@@ -90,6 +141,8 @@ export async function addCashMovement(input: MovementInput): Promise<ActionResul
       },
     });
   }
+
+  if (parsed.data.type === "INCOME") await checkCashLimit(register.id, session);
 
   revalidatePath("/admin/caja");
   revalidatePath("/admin");
