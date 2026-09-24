@@ -59,7 +59,7 @@ function LoginForm() {
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="admin@lareinahelados.com"
+              placeholder="tu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -88,10 +88,6 @@ function LoginForm() {
             {loading && <Loader2 className="size-4 animate-spin" />}
             Ingresar
           </Button>
-
-          <p className="text-center text-xs text-muted-foreground mt-1">
-            Demo: admin@lareinahelados.com / helados123
-          </p>
         </form>
       </CardContent>
     </Card>
