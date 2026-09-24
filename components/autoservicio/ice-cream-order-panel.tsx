@@ -69,8 +69,6 @@ export function IceCreamOrderPanel({
     );
   }
 
-  const canAdd = max === 0 || selected.length > 0;
-
   return (
     <div className="flex flex-1 flex-col gap-4 lg:flex-row">
       <div className="flex shrink-0 flex-col gap-2 lg:w-52">
@@ -164,7 +162,7 @@ export function IceCreamOrderPanel({
         )}
 
         {max > 0 && (
-          <Button size="lg" disabled={!canAdd} onClick={handleAdd} className="mt-auto self-start">
+          <Button size="lg" onClick={handleAdd} className="mt-auto self-start">
             Agregar {format.name} · {currency.format(format.price)}
           </Button>
         )}
