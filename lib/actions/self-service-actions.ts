@@ -107,11 +107,14 @@ export async function createSelfServiceOrder(
 
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
     if (openRegister) {
+      // El envío no entra a la caja del local (queda con el repartidor) — el efectivo
+      // esperado de Caja solo debe reflejar el valor de los productos, no el total del
+      // pedido (que sí incluye el envío, para el ticket y lo que paga el cliente).
       await tx.cashMovement.create({
         data: {
           cashRegisterId: openRegister.id,
           type: CASH_MOVEMENT_TYPE.SALE_CASH,
-          amount: total,
+          amount: subtotal,
           paymentMethod: PAYMENT_METHOD.CASH,
           description: `Venta pedido #${order.number} (autoservicio)`,
           userId: null,
