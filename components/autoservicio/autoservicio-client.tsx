@@ -52,6 +52,7 @@ export function AutoservicioClient({
   ]
     .filter(Boolean)
     .join(" - ");
+  const [customerName, setCustomerName] = useState("");
   const [cashTendered, setCashTendered] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -98,6 +99,7 @@ export function AutoservicioClient({
     setAddressStreet("");
     setAddressNumber("");
     setAddressReference("");
+    setCustomerName("");
     setCashTendered("");
     setConfirmed(null);
   }
@@ -106,6 +108,10 @@ export function AutoservicioClient({
     setError(null);
     if (cart.length === 0) {
       setError("Agregá al menos un producto a tu pedido");
+      return;
+    }
+    if (!customerName.trim()) {
+      setError("Completá tu nombre");
       return;
     }
     if (orderType === "DELIVERY" && !deliveryAddress.trim()) {
@@ -119,6 +125,7 @@ export function AutoservicioClient({
 
     startTransition(async () => {
       const res = await createSelfServiceOrder({
+        customerName,
         type: orderType as never,
         deliveryAddress,
         cashTendered: Number(cashTendered) as never,
@@ -251,6 +258,17 @@ export function AutoservicioClient({
               </div>
             </div>
           )}
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="customerName">Tu nombre</Label>
+            <Input
+              id="customerName"
+              required
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Nombre y apellido"
+            />
+          </div>
 
           <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
             Pagás en efectivo al {orderType === "DELIVERY" ? "recibir tu pedido" : "retirarlo"}.

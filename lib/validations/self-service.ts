@@ -3,6 +3,7 @@ import { saleItemSchema } from "@/lib/validations/sale";
 
 export const selfServiceOrderSchema = z
   .object({
+    customerName: z.string().trim().min(2, "Ingresá tu nombre").max(80),
     type: z.enum(["TAKEAWAY", "DELIVERY"]),
     deliveryAddress: z.string().trim().max(200).optional().or(z.literal("")),
     cashTendered: z.coerce.number().positive("Indicá con cuánto pagás"),

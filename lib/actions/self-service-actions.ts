@@ -17,8 +17,8 @@ type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: s
 /**
  * Pedido público, sin login: lo arma el cliente desde /autoservicio. A diferencia de
  * createSale, no hay sesión de staff — no hay servedById, el pago queda fijo en efectivo
- * (nunca se confía en un método de pago mandado por el cliente), y no se pide ni guarda
- * nombre/teléfono — no queda asociado a ningún Customer.
+ * (nunca se confía en un método de pago mandado por el cliente). Solo se pide el nombre
+ * (no teléfono), así que el cliente se busca/crea por nombre en vez de por teléfono.
  */
 export async function createSelfServiceOrder(
   input: SelfServiceOrderInput
@@ -46,6 +46,27 @@ export async function createSelfServiceOrder(
   const notes = `Paga con $${data.cashTendered.toLocaleString("es-AR")}${change >= 0 ? ` (vuelto $${change.toLocaleString("es-AR")})` : ""}`;
 
   const result = await db.$transaction(async (tx) => {
+    let customer = await tx.customer.findFirst({ where: { name: data.customerName } });
+    if (customer) {
+      customer = await tx.customer.update({
+        where: { id: customer.id },
+        data: {
+          totalSpent: { increment: total },
+          lastPurchaseAt: new Date(),
+          points: { increment: Math.floor(total / 100) },
+        },
+      });
+    } else {
+      customer = await tx.customer.create({
+        data: {
+          name: data.customerName,
+          totalSpent: total,
+          lastPurchaseAt: new Date(),
+          points: Math.floor(total / 100),
+        },
+      });
+    }
+
     const max = await tx.order.aggregate({ _max: { number: true } });
     const number = (max._max.number ?? 1040) + 1;
 
@@ -55,6 +76,7 @@ export async function createSelfServiceOrder(
         type: data.type,
         status: ORDER_STATUS.RECEIVED,
         channel: ORDER_CHANNEL.SELF_SERVICE,
+        customerId: customer.id,
         servedById: null,
         deliveryAddress: data.type === "DELIVERY" ? data.deliveryAddress || null : null,
         subtotal,
