@@ -80,6 +80,7 @@ model Product {
   allowsFlavors Boolean  @default(false)
   maxFlavors    Int      @default(0)
   showInCounter Boolean  @default(false)
+  order         Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

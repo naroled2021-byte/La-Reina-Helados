@@ -14,7 +14,7 @@ export async function getSalesPageData() {
     db.product.findMany({
       where: { active: true },
       include: { category: true },
-      orderBy: [{ category: { order: "asc" } }, { name: "asc" }],
+      orderBy: [{ category: { order: "asc" } }, { order: "asc" }, { name: "asc" }],
     }),
     db.flavor.findMany({ where: { active: true }, orderBy: [{ popular: "desc" }, { name: "asc" }] }),
     db.paymentMethodConfig.findMany({ where: { enabled: true }, orderBy: { order: "asc" } }),
@@ -43,7 +43,7 @@ export async function getMostradorPageData() {
     db.product.findMany({
       where: { active: true, showInCounter: true },
       include: { category: true },
-      orderBy: [{ category: { order: "asc" } }, { name: "asc" }],
+      orderBy: [{ category: { order: "asc" } }, { order: "asc" }, { name: "asc" }],
     }),
     db.paymentMethodConfig.findMany({ where: { enabled: true }, orderBy: { order: "asc" } }),
   ]);
