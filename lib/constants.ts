@@ -16,6 +16,10 @@ export const ORDER_TYPE = {
   DELIVERY: "DELIVERY",
 } as const;
 
+// Adicional de envío para pedidos de Delivery hechos desde Autoservicio — se suma al
+// total real del pedido (antes solo se avisaba por texto, sin quedar en el total).
+export const SELF_SERVICE_DELIVERY_FEE = 500;
+
 export const ORDER_STATUS = {
   RECEIVED: "RECEIVED",
   PREPARING: "PREPARING",

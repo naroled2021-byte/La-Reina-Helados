@@ -166,6 +166,10 @@ function ReceiptBody({
         ))}
         {ticket.discount > 0 &&
           padRow("Descuento", `-${currency.format(ticket.discount)}`, width).map((l, i) => <Line key={i} text={l} />)}
+        {ticket.total > ticket.subtotal - ticket.discount &&
+          padRow("Envío", currency.format(ticket.total - ticket.subtotal + ticket.discount), width).map((l, i) => (
+            <Line key={i} text={l} />
+          ))}
         {padRow("Total", currency.format(ticket.total), bigWidth).map((l, i) => (
           <Line key={i} text={l} big />
         ))}

@@ -3,15 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { selfServiceOrderSchema, type SelfServiceOrderInput } from "@/lib/validations/self-service";
-import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD, CASH_MOVEMENT_TYPE, NOTIFICATION_TYPE } from "@/lib/constants";
+import {
+  ORDER_STATUS,
+  ORDER_CHANNEL,
+  PAYMENT_METHOD,
+  CASH_MOVEMENT_TYPE,
+  NOTIFICATION_TYPE,
+  SELF_SERVICE_DELIVERY_FEE,
+} from "@/lib/constants";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
 /**
  * Pedido público, sin login: lo arma el cliente desde /autoservicio. A diferencia de
  * createSale, no hay sesión de staff — no hay servedById, el pago queda fijo en efectivo
- * (nunca se confía en un método de pago mandado por el cliente) y el cliente se
- * busca/crea por teléfono en vez de elegirse de una lista.
+ * (nunca se confía en un método de pago mandado por el cliente), y no se pide ni guarda
+ * nombre/teléfono — no queda asociado a ningún Customer.
  */
 export async function createSelfServiceOrder(
   input: SelfServiceOrderInput
@@ -32,37 +39,13 @@ export async function createSelfServiceOrder(
     const product = productMap.get(item.productId)!;
     return sum + product.price * item.quantity;
   }, 0);
-  const total = subtotal;
+  const deliveryFee = data.type === "DELIVERY" ? SELF_SERVICE_DELIVERY_FEE : 0;
+  const total = subtotal + deliveryFee;
 
-  const change = data.cashTendered != null ? data.cashTendered - total : null;
-  const notes =
-    data.cashTendered != null
-      ? `Paga con $${data.cashTendered.toLocaleString("es-AR")}${change != null && change >= 0 ? ` (vuelto $${change.toLocaleString("es-AR")})` : ""}`
-      : null;
+  const change = data.cashTendered - total;
+  const notes = `Paga con $${data.cashTendered.toLocaleString("es-AR")}${change >= 0 ? ` (vuelto $${change.toLocaleString("es-AR")})` : ""}`;
 
   const result = await db.$transaction(async (tx) => {
-    let customer = await tx.customer.findFirst({ where: { phone: data.customerPhone } });
-    if (customer) {
-      customer = await tx.customer.update({
-        where: { id: customer.id },
-        data: {
-          totalSpent: { increment: total },
-          lastPurchaseAt: new Date(),
-          points: { increment: Math.floor(total / 100) },
-        },
-      });
-    } else {
-      customer = await tx.customer.create({
-        data: {
-          name: data.customerName,
-          phone: data.customerPhone,
-          totalSpent: total,
-          lastPurchaseAt: new Date(),
-          points: Math.floor(total / 100),
-        },
-      });
-    }
-
     const max = await tx.order.aggregate({ _max: { number: true } });
     const number = (max._max.number ?? 1040) + 1;
 
@@ -72,7 +55,6 @@ export async function createSelfServiceOrder(
         type: data.type,
         status: ORDER_STATUS.RECEIVED,
         channel: ORDER_CHANNEL.SELF_SERVICE,
-        customerId: customer.id,
         servedById: null,
         deliveryAddress: data.type === "DELIVERY" ? data.deliveryAddress || null : null,
         subtotal,

@@ -17,7 +17,7 @@ import {
 import { IceCreamOrderPanel } from "@/components/autoservicio/ice-cream-order-panel";
 import { createSelfServiceOrder } from "@/lib/actions/self-service-actions";
 import { currency } from "@/lib/format";
-import { ORDER_TYPE_LABEL } from "@/lib/constants";
+import { ORDER_TYPE_LABEL, SELF_SERVICE_DELIVERY_FEE } from "@/lib/constants";
 import type { CartLine, SaleFlavor } from "@/components/sales/types";
 import type { ProductRow } from "@/components/products/types";
 
@@ -52,8 +52,6 @@ export function AutoservicioClient({
   ]
     .filter(Boolean)
     .join(" - ");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
   const [cashTendered, setCashTendered] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -62,6 +60,8 @@ export function AutoservicioClient({
     () => cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0),
     [cart]
   );
+  const deliveryFee = orderType === "DELIVERY" ? SELF_SERVICE_DELIVERY_FEE : 0;
+  const total = subtotal + deliveryFee;
 
   function handleAddFormat(format: ProductRow, flavorIds: string[]) {
     const names = flavorIds.map((id) => flavors.find((f) => f.id === id)?.name ?? "").filter(Boolean);
@@ -98,8 +98,6 @@ export function AutoservicioClient({
     setAddressStreet("");
     setAddressNumber("");
     setAddressReference("");
-    setCustomerName("");
-    setCustomerPhone("");
     setCashTendered("");
     setConfirmed(null);
   }
@@ -110,22 +108,20 @@ export function AutoservicioClient({
       setError("Agregá al menos un producto a tu pedido");
       return;
     }
-    if (!customerName.trim() || !customerPhone.trim()) {
-      setError("Completá tu nombre y teléfono");
-      return;
-    }
     if (orderType === "DELIVERY" && !deliveryAddress.trim()) {
       setError("Completá la dirección de entrega");
+      return;
+    }
+    if (!cashTendered || Number(cashTendered) <= 0) {
+      setError("Indicá con cuánto pagás");
       return;
     }
 
     startTransition(async () => {
       const res = await createSelfServiceOrder({
-        customerName,
-        customerPhone,
         type: orderType as never,
         deliveryAddress,
-        cashTendered: cashTendered ? (Number(cashTendered) as never) : undefined,
+        cashTendered: Number(cashTendered) as never,
         items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity, flavorIds: l.flavorIds })),
       });
 
@@ -249,43 +245,25 @@ export function AutoservicioClient({
               <div className="flex items-start gap-2 rounded-lg bg-amber-100 px-3 py-2 text-xs text-amber-900">
                 <Info className="mt-0.5 size-3.5 shrink-0" />
                 <p>
-                  El delivery tiene un <strong>adicional de $500</strong> que se paga al recibir el pedido (no
-                  está incluido en el total de abajo).
+                  El delivery tiene un <strong>adicional de $500</strong> que ya está incluido en el total de
+                  abajo, y se paga en efectivo al recibir el pedido.
                 </p>
               </div>
             </div>
           )}
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="customerName">Tu nombre</Label>
-            <Input
-              id="customerName"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Nombre y apellido"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="customerPhone">Tu teléfono</Label>
-            <Input
-              id="customerPhone"
-              value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
-              placeholder="11-1234-5678"
-            />
-          </div>
 
           <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
             Pagás en efectivo al {orderType === "DELIVERY" ? "recibir tu pedido" : "retirarlo"}.
           </p>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cashTendered">¿Con cuánto pagás? (opcional)</Label>
+            <Label htmlFor="cashTendered">¿Con cuánto pagás?</Label>
             <Input
               id="cashTendered"
               type="number"
               inputMode="numeric"
               min={0}
+              required
               value={cashTendered}
               onChange={(e) => setCashTendered(e.target.value)}
               placeholder="Ej: 20000"
@@ -293,9 +271,19 @@ export function AutoservicioClient({
           </div>
 
           <div className="flex flex-col gap-1 border-t pt-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{currency.format(subtotal)}</span>
+            </div>
+            {deliveryFee > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Envío</span>
+                <span>{currency.format(deliveryFee)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-base font-semibold">
               <span>Total</span>
-              <span>{currency.format(subtotal)}</span>
+              <span>{currency.format(total)}</span>
             </div>
           </div>
 
