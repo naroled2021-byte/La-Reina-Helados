@@ -101,7 +101,7 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
     console.log("[pedidos-debug] starting print for order:", printQueue[0]?.number);
     // Tiene que sobrevivir a todas las copias configuradas (cada una con ~1.8s de por medio,
     // ver ticket-view.tsx) antes de pasar al siguiente pedido de la cola.
-    const advanceDelay = 1500 + Math.max(1, ticketSettings.copies || 2) * 2000;
+    const advanceDelay = 1500 + Math.max(1, ticketSettings.copies || 2) * 3700;
     const timer = setTimeout(() => {
       console.log("[pedidos-debug] advancing print queue past order:", printQueue[0]?.number);
       setPrintQueue((prev) => prev.slice(1));

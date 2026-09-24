@@ -36,6 +36,9 @@ export type TicketSettings = {
 
 const CHAR_WIDTH: Record<string, number> = { "58mm": 19, "80mm": 28 };
 const PRINT_WIDTH_MM: Record<string, string> = { "58mm": "38mm", "80mm": "58mm" };
+// Margen entre una copia y la siguiente — una impresora lenta puede descartar el segundo
+// trabajo si se lo mandamos muy pegado al primero.
+const COPY_GAP_MS = 3500;
 
 function centerText(text: string, width: number) {
   if (text.length >= width) return text;
@@ -229,7 +232,7 @@ export function TicketView({
           console.log(`[ticket-debug] calling window.print() copy ${copy}/${totalCopies} for order`, ticket.number);
           window.print();
           if (copy < totalCopies) {
-            setTimeout(() => printCopy(copy + 1), 1800);
+            setTimeout(() => printCopy(copy + 1), COPY_GAP_MS);
           }
         });
       });
@@ -274,7 +277,7 @@ export function TicketView({
         requestAnimationFrame(() => {
           window.print();
           copy += 1;
-          if (copy <= totalCopies) setTimeout(next, 1800);
+          if (copy <= totalCopies) setTimeout(next, COPY_GAP_MS);
         });
       });
     };
