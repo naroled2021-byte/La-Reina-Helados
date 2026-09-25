@@ -145,7 +145,11 @@ function ReceiptBody({
         {ticket.customerName && <Line text={`Cliente: ${ticket.customerName}`} />}
         {ticket.deliveryAddress &&
           wrapText(`Dirección: ${ticket.deliveryAddress}`, width).map((l, i) => <Line key={i} text={l} />)}
-        {ticket.notes && wrapText(ticket.notes, width).map((l, i) => <Line key={i} text={l} big />)}
+        {ticket.notes &&
+          ticket.notes
+            .split("\n")
+            .flatMap((raw) => wrapText(raw, width))
+            .map((l, i) => <Line key={i} text={l} big />)}
 
         <Line text={divider} />
         {ticket.items.map((line) => (

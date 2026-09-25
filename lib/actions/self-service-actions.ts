@@ -44,7 +44,8 @@ export async function createSelfServiceOrder(
   const total = subtotal + deliveryFee;
 
   const change = data.cashTendered - total;
-  const notes = `Paga con $${data.cashTendered.toLocaleString("es-AR")}${change >= 0 ? ` (vuelto $${change.toLocaleString("es-AR")})` : ""}`;
+  const paymentNote = `Paga con $${data.cashTendered.toLocaleString("es-AR")}${change >= 0 ? ` (vuelto $${change.toLocaleString("es-AR")})` : ""}`;
+  const notes = data.observations?.trim() ? `${paymentNote}\nObs: ${data.observations.trim()}` : paymentNote;
 
   const result = await db.$transaction(async (tx) => {
     let customer = await tx.customer.findFirst({ where: { name: data.customerName } });

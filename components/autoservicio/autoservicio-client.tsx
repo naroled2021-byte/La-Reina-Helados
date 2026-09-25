@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -55,6 +56,7 @@ export function AutoservicioClient({
     .filter(Boolean)
     .join(" - ");
   const [customerName, setCustomerName] = useState("");
+  const [observations, setObservations] = useState("");
   const [cashTendered, setCashTendered] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -102,6 +104,7 @@ export function AutoservicioClient({
     setAddressNumber("");
     setAddressReference("");
     setCustomerName("");
+    setObservations("");
     setCashTendered("");
     setConfirmed(null);
   }
@@ -130,6 +133,7 @@ export function AutoservicioClient({
         customerName,
         type: orderType as never,
         deliveryAddress,
+        observations,
         cashTendered: Number(cashTendered) as never,
         items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity, flavorIds: l.flavorIds })),
       });
@@ -281,6 +285,17 @@ export function AutoservicioClient({
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Nombre y apellido"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="observations">Observaciones (opcional)</Label>
+            <Textarea
+              id="observations"
+              rows={2}
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
+              placeholder="Ej: quiero más de dulce de leche, menos chocolate..."
             />
           </div>
 
