@@ -28,9 +28,11 @@ const FORMAT_GROUP_NAMES = ["Kilo", "1/2 Kilo", "1/4 Kilo", "Paquete Cucuruchos 
 export function AutoservicioClient({
   products,
   flavors,
+  waitMinutes,
 }: {
   products: ProductRow[];
   flavors: SaleFlavor[];
+  waitMinutes: number;
 }) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [confirmed, setConfirmed] = useState<{ number: number; total: number } | null>(null);
@@ -152,6 +154,12 @@ export function AutoservicioClient({
               <br />
               Pagás en efectivo al {orderType === "DELIVERY" ? "recibir tu pedido" : "retirarlo"}. Te vamos a
               avisar cuando esté listo.
+              {waitMinutes > 0 && (
+                <>
+                  <br />
+                  Demora estimada: <span className="font-semibold text-foreground">{waitMinutes} minutos</span>.
+                </>
+              )}
             </p>
             <Button className="mt-2" onClick={resetForm}>
               Hacer otro pedido

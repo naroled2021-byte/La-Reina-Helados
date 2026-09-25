@@ -267,6 +267,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "settings.update_print": "Configuración de impresión actualizada",
   "settings.update_theme": "Configuración de apariencia actualizada",
   "settings.update_cash_limit": "Límite de caja actualizado",
+  "settings.update_autoservicio": "Demora de Autoservicio actualizada",
 };
 
 export const FLAVOR_CATEGORY_LABEL: Record<string, string> = {

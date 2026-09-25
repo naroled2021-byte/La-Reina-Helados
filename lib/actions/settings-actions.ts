@@ -7,9 +7,11 @@ import {
   generalSettingsSchema,
   themeSettingsSchema,
   printSettingsSchema,
+  autoservicioSettingsSchema,
   type GeneralSettingsInput,
   type ThemeSettingsInput,
   type PrintSettingsInput,
+  type AutoservicioSettingsInput,
 } from "@/lib/validations/settings";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -89,6 +91,23 @@ export async function updatePrintSettings(input: PrintSettingsInput): Promise<Ac
   });
 
   revalidatePath("/admin/configuracion");
+  return { ok: true, data: undefined };
+}
+
+export async function updateAutoservicioSettings(input: AutoservicioSettingsInput): Promise<ActionResult> {
+  const session = await requirePermission("settings.manage");
+  const parsed = autoservicioSettingsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const d = parsed.data;
+
+  await upsertSettings([["autoservicio.waitMinutes", String(d.waitMinutes), "autoservicio"]]);
+
+  await db.auditLog.create({
+    data: { userId: session.user.id, action: "settings.update_autoservicio", entity: "Setting" },
+  });
+
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/autoservicio");
   return { ok: true, data: undefined };
 }
 

@@ -7,6 +7,7 @@ import { PaymentMethodsTab } from "@/components/settings/payment-methods-tab";
 import { CategoriesTab } from "@/components/settings/categories-tab";
 import { PromotionsTab } from "@/components/settings/promotions-tab";
 import { PrintTab } from "@/components/settings/print-tab";
+import { AutoservicioTab } from "@/components/settings/autoservicio-tab";
 import type { CategoryRow, PaymentMethodRow, PromotionRow } from "@/components/settings/types";
 
 export function SettingsPageClient({
@@ -29,6 +30,7 @@ export function SettingsPageClient({
         <TabsTrigger value="categories">Categorías</TabsTrigger>
         <TabsTrigger value="promotions">Promociones</TabsTrigger>
         <TabsTrigger value="print">Impresión</TabsTrigger>
+        <TabsTrigger value="autoservicio">Autoservicio</TabsTrigger>
       </TabsList>
 
       <div className="pt-4">
@@ -49,6 +51,9 @@ export function SettingsPageClient({
         </TabsContent>
         <TabsContent value="print">
           <PrintTab settingsMap={settingsMap} />
+        </TabsContent>
+        <TabsContent value="autoservicio">
+          <AutoservicioTab settingsMap={settingsMap} />
         </TabsContent>
       </div>
     </Tabs>

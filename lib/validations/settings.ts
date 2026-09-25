@@ -28,6 +28,10 @@ export const printSettingsSchema = z.object({
   copies: z.coerce.number().int().min(1).max(4),
 });
 
+export const autoservicioSettingsSchema = z.object({
+  waitMinutes: z.coerce.number().int().min(0).max(180),
+});
+
 export const promotionSchema = z.object({
   name: z.string().trim().min(2, "El nombre es muy corto").max(100),
   type: z.string().min(1, "Elegí un tipo"),
@@ -42,4 +46,5 @@ export const promotionSchema = z.object({
 export type GeneralSettingsInput = z.infer<typeof generalSettingsSchema>;
 export type ThemeSettingsInput = z.infer<typeof themeSettingsSchema>;
 export type PrintSettingsInput = z.infer<typeof printSettingsSchema>;
+export type AutoservicioSettingsInput = z.infer<typeof autoservicioSettingsSchema>;
 export type PromotionInput = z.infer<typeof promotionSchema>;
