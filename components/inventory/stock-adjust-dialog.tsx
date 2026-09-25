@@ -49,6 +49,11 @@ export function StockAdjustDialog({
   );
 }
 
+// "RECOUNT" no es un tipo real del backend — es un modo de la pantalla nomás: en vez de
+// pedir una diferencia (+/-), pide el stock real y acá se calcula la diferencia sola antes
+// de mandarlo como un ajuste manual (ADJUSTMENT) normal.
+const RECOUNT = "RECOUNT";
+
 function AdjustForm({
   item,
   onSaved,
@@ -58,8 +63,9 @@ function AdjustForm({
   onSaved: () => void;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [type, setType] = useState<string>("IN");
+  const [type, setType] = useState<string>(RECOUNT);
   const [quantity, setQuantity] = useState("");
+  const [recount, setRecount] = useState(String(item.currentStock));
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -68,8 +74,18 @@ function AdjustForm({
     e.preventDefault();
     setError(null);
 
+    if (type === RECOUNT && Number(recount) === item.currentStock) {
+      onOpenChange(false);
+      return;
+    }
+
+    const payload =
+      type === RECOUNT
+        ? { type: "ADJUSTMENT", quantity: Number(recount) - item.currentStock, reason: reason || "Recuento" }
+        : { type, quantity, reason };
+
     startTransition(async () => {
-      const res = await adjustStock(item.id, { type, quantity, reason } as never);
+      const res = await adjustStock(item.id, payload as never);
       if (!res.ok) {
         setError(res.error);
         return;
@@ -92,11 +108,14 @@ function AdjustForm({
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label>Tipo de movimiento</Label>
-          <Select value={type} onValueChange={(v) => setType(v ?? "IN")}>
+          <Select value={type} onValueChange={(v) => setType(v ?? RECOUNT)}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Tipo">{(value: string) => MOVEMENT_TYPE_LABEL[value] ?? value}</SelectValue>
+              <SelectValue placeholder="Tipo">
+                {(value: string) => (value === RECOUNT ? "Recuento (poner el stock real)" : MOVEMENT_TYPE_LABEL[value] ?? value)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={RECOUNT}>Recuento (poner el stock real)</SelectItem>
               {stockMovementTypes.map((t) => (
                 <SelectItem key={t} value={t}>
                   {MOVEMENT_TYPE_LABEL[t]}
@@ -106,20 +125,35 @@ function AdjustForm({
           </Select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="quantity">
-            Cantidad {type === "ADJUSTMENT" && "(puede ser negativa)"}
-          </Label>
-          <Input
-            id="quantity"
-            type="number"
-            step="0.5"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            required
-            autoFocus
-          />
-        </div>
+        {type === RECOUNT ? (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="recount">Stock real ({item.unit})</Label>
+            <Input
+              id="recount"
+              type="number"
+              step="0.5"
+              value={recount}
+              onChange={(e) => setRecount(e.target.value)}
+              required
+              autoFocus
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="quantity">
+              Cantidad {type === "ADJUSTMENT" && "(puede ser negativa)"}
+            </Label>
+            <Input
+              id="quantity"
+              type="number"
+              step="0.5"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+              autoFocus
+            />
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="reason">Motivo (opcional)</Label>
