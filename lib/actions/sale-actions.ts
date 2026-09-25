@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/auth-helpers";
 import { saleSchema, type SaleInput } from "@/lib/validations/sale";
 import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD, CASH_MOVEMENT_TYPE, NOTIFICATION_TYPE } from "@/lib/constants";
+import { deductStockForSale } from "@/lib/stock-deduction";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -69,6 +70,13 @@ export async function createSale(
     await tx.payment.create({
       data: { orderId: order.id, method: data.paymentMethod, amount: total },
     });
+
+    await deductStockForSale(
+      tx,
+      data.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      order.number,
+      session.user.id
+    );
 
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
     if (openRegister) {

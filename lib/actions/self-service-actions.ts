@@ -11,6 +11,7 @@ import {
   NOTIFICATION_TYPE,
   SELF_SERVICE_DELIVERY_FEE,
 } from "@/lib/constants";
+import { deductStockForSale } from "@/lib/stock-deduction";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -104,6 +105,12 @@ export async function createSelfServiceOrder(
     await tx.payment.create({
       data: { orderId: order.id, method: PAYMENT_METHOD.CASH, amount: total },
     });
+
+    await deductStockForSale(
+      tx,
+      data.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      order.number
+    );
 
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
     if (openRegister) {
