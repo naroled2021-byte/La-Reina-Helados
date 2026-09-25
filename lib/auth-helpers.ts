@@ -10,6 +10,8 @@ export async function requireSession() {
 
 export async function requirePermission(key: string) {
   const session = await requireSession();
-  if (!session.user.permissions.includes(key)) redirect("/admin");
+  // No redirige a /admin: el Dashboard también exige un permiso (dashboard.view), así que
+  // si ese fuera el destino, un usuario sin ese permiso entraría en un loop de redirects.
+  if (!session.user.permissions.includes(key)) redirect("/admin/sin-acceso");
   return session;
 }

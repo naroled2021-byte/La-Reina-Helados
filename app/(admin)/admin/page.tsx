@@ -19,10 +19,10 @@ import { PeakHoursChart } from "@/components/dashboard/peak-hours-chart";
 import { OrderStatusCards } from "@/components/dashboard/order-status-cards";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { formatCompactCurrency } from "@/lib/format";
-import { requireSession } from "@/lib/auth-helpers";
+import { requirePermission } from "@/lib/auth-helpers";
 
 export default async function DashboardPage() {
-  const [session, data] = await Promise.all([requireSession(), getDashboardData()]);
+  const [session, data] = await Promise.all([requirePermission("dashboard.view"), getDashboardData()]);
 
   return (
     <div className="flex flex-col gap-6 pb-8">

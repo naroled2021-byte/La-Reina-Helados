@@ -26,7 +26,7 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, available: true },
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, permission: "dashboard.view", available: true },
   { label: "Ventas", href: "/admin/ventas", icon: ShoppingCart, permission: "sales.create", available: true },
   { label: "Mostrador", href: "/mostrador", icon: Store, permission: "sales.create", available: true },
   { label: "Pedidos", href: "/admin/pedidos", icon: ClipboardList, permission: "orders.manage", available: true },
