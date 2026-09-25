@@ -13,7 +13,7 @@ export async function getKanbanOrders() {
   return db.order.findMany({
     where: {
       status: { not: ORDER_STATUS.CANCELLED },
-      OR: [{ status: { not: ORDER_STATUS.DELIVERED } }, { createdAt: { gte: today } }],
+      createdAt: { gte: today },
     },
     include: {
       items: { include: { product: true, flavors: { include: { flavor: true } } } },
