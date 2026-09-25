@@ -22,6 +22,8 @@ export type TicketData = {
   customerName: string | null;
   deliveryAddress?: string | null;
   notes?: string | null;
+  /** Copias a imprimir para este pedido puntual — si no viene, se usa settings.copies. */
+  copies?: number;
 };
 
 export type TicketSettings = {
@@ -214,7 +216,7 @@ export function TicketView({
    *  Para imprimir pedidos que llegan solos (autoservicio) sin interrumpir a nadie con un popup. */
   silent?: boolean;
 }) {
-  const totalCopies = Math.max(1, settings.copies || 2);
+  const totalCopies = Math.max(1, ticket?.copies ?? settings.copies ?? 2);
   const [printCopyIndex, setPrintCopyIndex] = useState(1);
 
   useEffect(() => {

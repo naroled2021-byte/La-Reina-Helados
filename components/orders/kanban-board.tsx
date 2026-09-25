@@ -7,8 +7,15 @@ import { OrderCard } from "@/components/orders/order-card";
 import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
 import { logOrderReprint } from "@/lib/actions/order-actions";
 import { playNotificationSound } from "@/lib/notification-sound";
-import { ORDER_STATUS, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import type { KanbanOrder } from "@/components/orders/types";
+
+// Mostrador/Ventas (COUNTER) imprimen 1 sola copia; Autoservicio (SELF_SERVICE) imprime 2 —
+// fijo por canal, no por la configuración general de Impresión (esa queda solo para las
+// pruebas manuales desde Configuración).
+function copiesForChannel(channel: string): number {
+  return channel === ORDER_CHANNEL.SELF_SERVICE ? 2 : 1;
+}
 
 function toTicketData(order: KanbanOrder): TicketData {
   return {
@@ -31,6 +38,7 @@ function toTicketData(order: KanbanOrder): TicketData {
     customerName: order.customerName,
     deliveryAddress: order.deliveryAddress,
     notes: order.notes,
+    copies: copiesForChannel(order.channel),
   };
 }
 
@@ -101,7 +109,8 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
     console.log("[pedidos-debug] starting print for order:", printQueue[0]?.number);
     // Tiene que sobrevivir a todas las copias configuradas (cada una con ~1.8s de por medio,
     // ver ticket-view.tsx) antes de pasar al siguiente pedido de la cola.
-    const advanceDelay = 1500 + Math.max(1, ticketSettings.copies || 2) * 3700;
+    const currentCopies = printQueue[0]?.copies ?? ticketSettings.copies ?? 2;
+    const advanceDelay = 1500 + Math.max(1, currentCopies) * 3700;
     const timer = setTimeout(() => {
       console.log("[pedidos-debug] advancing print queue past order:", printQueue[0]?.number);
       setPrintQueue((prev) => prev.slice(1));
