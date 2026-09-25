@@ -1,11 +1,6 @@
 import { db } from "@/lib/db";
 import { getStockStatus } from "@/lib/constants";
-
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
+import { startOfDayAR } from "@/lib/date-ar";
 
 export async function getProductionSuggestions() {
   const flavors = await db.flavor.findMany({
@@ -35,7 +30,7 @@ export async function getProductionSuggestions() {
 }
 
 export async function getTodayProductions() {
-  const today = startOfDay(new Date());
+  const today = startOfDayAR();
 
   return db.production.findMany({
     where: { date: { gte: today } },

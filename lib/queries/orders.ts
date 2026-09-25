@@ -1,14 +1,9 @@
 import { db } from "@/lib/db";
 import { ORDER_STATUS } from "@/lib/constants";
-
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
+import { startOfDayAR } from "@/lib/date-ar";
 
 export async function getKanbanOrders() {
-  const today = startOfDay(new Date());
+  const today = startOfDayAR();
 
   return db.order.findMany({
     where: {

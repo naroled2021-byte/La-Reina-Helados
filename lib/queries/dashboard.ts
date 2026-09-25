@@ -1,19 +1,15 @@
 import { db } from "@/lib/db";
 import { ORDER_STATUS, PAYMENT_METHOD_LABEL, getStockStatus } from "@/lib/constants";
 import { computeExpectedCash } from "@/lib/cash-utils";
+import { startOfDayAR } from "@/lib/date-ar";
 
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
 export async function getDashboardData() {
   const now = new Date();
-  const today = startOfDay(now);
+  const today = startOfDayAR(now);
   const monthStart = startOfMonth(now);
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
