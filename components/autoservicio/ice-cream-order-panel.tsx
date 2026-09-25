@@ -46,19 +46,18 @@ export function IceCreamOrderPanel({
     if (selected.length >= max) return;
 
     const next = [...selected, id];
-    // Al completar la cantidad de gustos permitida, se carga directo al pedido.
+    setSelected(next);
+    // Al completar la cantidad de gustos permitida, se carga directo al pedido — pero los
+    // gustos quedan marcados (no se limpia la selección), para que se vea claro qué se
+    // eligió. Se limpia recién al elegir un formato nuevo (ver selectFormat).
     if (format && next.length >= max) {
       onAdd(format, next);
-      setSelected([]);
-    } else {
-      setSelected(next);
     }
   }
 
   function handleAdd() {
     if (!format) return;
     onAdd(format, selected);
-    setSelected([]);
   }
 
   if (!format) {
