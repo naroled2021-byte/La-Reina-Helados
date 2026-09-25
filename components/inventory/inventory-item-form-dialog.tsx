@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { createInventoryItem, updateInventoryItem } from "@/lib/actions/inventory-actions";
 import { creatableInventoryTypes } from "@/lib/validations/inventory";
-import { INVENTORY_ITEM_TYPE_LABEL } from "@/lib/constants";
+import { INVENTORY_ITEM_TYPE_LABEL, INVENTORY_UNIT_OPTIONS } from "@/lib/constants";
 import type { InventoryItemRow } from "@/components/inventory/types";
 
 type FormState = {
@@ -166,14 +166,19 @@ function InventoryItemForm({
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="unit">Unidad</Label>
-            <Input
-              id="unit"
-              placeholder="kg, l, unidad..."
-              value={form.unit}
-              onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-              required
-            />
+            <Label>Unidad</Label>
+            <Select value={form.unit} onValueChange={(v) => setForm((f) => ({ ...f, unit: v ?? f.unit }))}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Unidad">{(value: string) => value}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {INVENTORY_UNIT_OPTIONS.map((u) => (
+                  <SelectItem key={u} value={u}>
+                    {u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

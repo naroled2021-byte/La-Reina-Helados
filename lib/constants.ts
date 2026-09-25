@@ -92,6 +92,8 @@ export const INVENTORY_MOVEMENT_TYPE = {
   WASTE: "WASTE",
 } as const;
 
+export const INVENTORY_UNIT_OPTIONS = ["unidad", "kg", "g", "l", "ml", "paquete", "caja", "docena"] as const;
+
 export const INVENTORY_ITEM_TYPE_LABEL: Record<string, string> = {
   FLAVOR: "Sabor",
   INGREDIENT: "Materia prima",
