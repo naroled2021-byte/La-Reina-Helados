@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { CheckCircle2, Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, Info, Loader2, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,6 +184,12 @@ export function AutoservicioClient({
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          {waitMinutes > 0 && (
+            <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+              <Clock className="size-3.5 shrink-0" />
+              Demora estimada: {waitMinutes} minutos
+            </div>
+          )}
           {cart.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Elegí el formato y los gustos para empezar.
