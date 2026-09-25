@@ -3,6 +3,9 @@ import { z } from "zod";
 export const openRegisterSchema = z.object({
   openingAmounts: z.record(z.string(), z.coerce.number().min(0, "No puede ser negativo")),
   notes: z.string().trim().max(300).optional().or(z.literal("")),
+  // Solo hace falta si quien abre la caja no es Administrador — ver openCashRegister.
+  adminEmail: z.string().trim().optional().or(z.literal("")),
+  adminPassword: z.string().optional().or(z.literal("")),
 });
 
 export const movementSchema = z

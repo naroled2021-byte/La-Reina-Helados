@@ -1,5 +1,6 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/auth-helpers";
@@ -12,7 +13,7 @@ import {
   type CloseRegisterInput,
 } from "@/lib/validations/cash";
 import { computeExpectedByMethod, computeExpectedCash, sumAmounts } from "@/lib/cash-utils";
-import { NOTIFICATION_TYPE } from "@/lib/constants";
+import { NOTIFICATION_TYPE, ROLES } from "@/lib/constants";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -71,6 +72,23 @@ export async function openCashRegister(input: OpenRegisterInput): Promise<Action
   const session = await requirePermission("cash.manage");
   const parsed = openRegisterSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  // Abrir la caja requiere ser Administrador. Si quien está logueado no lo es, tiene que
+  // ingresar el email y la contraseña de un Administrador para autorizarlo — sin cerrar su
+  // propia sesión, solo se verifica acá.
+  if (session.user.role !== ROLES.ADMIN) {
+    const email = parsed.data.adminEmail?.trim();
+    const password = parsed.data.adminPassword;
+    if (!email || !password) {
+      return { ok: false, error: "Necesitás la autorización de un administrador para abrir la caja" };
+    }
+    const admin = await db.user.findUnique({ where: { email }, include: { role: true } });
+    if (!admin || admin.role.name !== ROLES.ADMIN || !admin.active) {
+      return { ok: false, error: "Ese usuario no es un administrador activo" };
+    }
+    const valid = await bcrypt.compare(password, admin.passwordHash);
+    if (!valid) return { ok: false, error: "Contraseña de administrador incorrecta" };
+  }
 
   const existing = await db.cashRegister.findFirst({ where: { status: "OPEN" } });
   if (existing) return { ok: false, error: "Ya hay una caja abierta" };

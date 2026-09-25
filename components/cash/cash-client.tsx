@@ -18,11 +18,13 @@ export function CashClient({
   closedRegisters,
   paymentMethods,
   cashLimit,
+  isAdmin,
 }: {
   openRegister: OpenRegister | null;
   closedRegisters: ClosedRegister[];
   paymentMethods: CashPaymentMethod[];
   cashLimit: number | null;
+  isAdmin: boolean;
 }) {
   const [movementDialog, setMovementDialog] = useState<"INCOME" | "EXPENSE" | "MANUAL_OPEN" | null>(null);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
@@ -30,7 +32,7 @@ export function CashClient({
   if (!openRegister) {
     return (
       <div className="flex flex-col gap-8">
-        <OpenRegisterCard paymentMethods={paymentMethods} />
+        <OpenRegisterCard paymentMethods={paymentMethods} isAdmin={isAdmin} />
         {closedRegisters.length > 0 && (
           <div>
             <h2 className="mb-3 text-sm font-medium text-muted-foreground">Historial de cierres</h2>

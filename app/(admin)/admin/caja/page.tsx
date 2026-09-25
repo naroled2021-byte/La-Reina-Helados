@@ -2,9 +2,11 @@ import { requirePermission } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 import { getCashPageData } from "@/lib/queries/cash";
 import { CashClient } from "@/components/cash/cash-client";
+import { ROLES } from "@/lib/constants";
 
 export default async function CajaPage() {
-  await requirePermission("cash.manage");
+  const session = await requirePermission("cash.manage");
+  const isAdmin = session.user.role === ROLES.ADMIN;
 
   const [{ openRegister, closedRegisters }, paymentMethodConfigs, cashLimitSetting] = await Promise.all([
     getCashPageData(),
@@ -24,6 +26,7 @@ export default async function CajaPage() {
       <CashClient
         paymentMethods={paymentMethods}
         cashLimit={cashLimit}
+        isAdmin={isAdmin}
         openRegister={
           openRegister
             ? {

@@ -13,12 +13,20 @@ import { openCashRegister } from "@/lib/actions/cash-actions";
 import { PAYMENT_METHOD } from "@/lib/constants";
 import type { CashPaymentMethod } from "@/components/cash/types";
 
-export function OpenRegisterCard({ paymentMethods }: { paymentMethods: CashPaymentMethod[] }) {
+export function OpenRegisterCard({
+  paymentMethods,
+  isAdmin,
+}: {
+  paymentMethods: CashPaymentMethod[];
+  isAdmin: boolean;
+}) {
   const router = useRouter();
   const [amounts, setAmounts] = useState<Record<string, string>>(() =>
     Object.fromEntries(paymentMethods.map((m) => [m.key, m.key === PAYMENT_METHOD.CASH ? "20000" : "0"]))
   );
   const [notes, setNotes] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -29,7 +37,7 @@ export function OpenRegisterCard({ paymentMethods }: { paymentMethods: CashPayme
       const openingAmounts = Object.fromEntries(
         Object.entries(amounts).map(([key, value]) => [key, Number(value) || 0])
       );
-      const res = await openCashRegister({ openingAmounts, notes });
+      const res = await openCashRegister({ openingAmounts, notes, adminEmail, adminPassword });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -71,6 +79,35 @@ export function OpenRegisterCard({ paymentMethods }: { paymentMethods: CashPayme
             <Label htmlFor="notes">Notas (opcional)</Label>
             <Textarea id="notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
+
+          {!isAdmin && (
+            <div className="flex flex-col gap-3 rounded-xl border border-dashed p-3">
+              <p className="text-xs text-muted-foreground">
+                Abrir la caja necesita autorización de un administrador.
+              </p>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="adminEmail">Email de administrador</Label>
+                <Input
+                  id="adminEmail"
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="adminPassword">Contraseña de administrador</Label>
+                <Input
+                  id="adminPassword"
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           {error && (
             <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
           )}
