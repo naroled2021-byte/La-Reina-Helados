@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createInventoryItem, createSupplier, updateInventoryItem } from "@/lib/actions/inventory-actions";
+import { createInventoryItem, updateInventoryItem } from "@/lib/actions/inventory-actions";
 import { creatableInventoryTypes } from "@/lib/validations/inventory";
 import { INVENTORY_ITEM_TYPE_LABEL } from "@/lib/constants";
-import type { InventoryItemRow, SupplierOption } from "@/components/inventory/types";
+import type { InventoryItemRow } from "@/components/inventory/types";
 
 type FormState = {
   name: string;
@@ -33,9 +33,7 @@ type FormState = {
   unit: string;
   minStock: string;
   maxStock: string;
-  cost: string;
   price: string;
-  supplierId: string;
   active: boolean;
   initialStock: string;
 };
@@ -48,9 +46,7 @@ function initialFormState(item: InventoryItemRow | null): FormState {
       unit: item.unit,
       minStock: String(item.minStock),
       maxStock: String(item.maxStock),
-      cost: String(item.cost),
       price: item.price ? String(item.price) : "",
-      supplierId: item.supplierId ?? "",
       active: item.active,
       initialStock: String(item.currentStock),
     };
@@ -61,9 +57,7 @@ function initialFormState(item: InventoryItemRow | null): FormState {
     unit: "unidad",
     minStock: "10",
     maxStock: "20",
-    cost: "",
     price: "",
-    supplierId: "",
     active: true,
     initialStock: "0",
   };
@@ -73,29 +67,18 @@ export function InventoryItemFormDialog({
   open,
   onOpenChange,
   item,
-  suppliers,
-  onSupplierCreated,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: InventoryItemRow | null;
-  suppliers: SupplierOption[];
-  onSupplierCreated: (supplier: SupplierOption) => void;
   onSaved: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         {open && (
-          <InventoryItemForm
-            key={item?.id ?? "create"}
-            item={item}
-            suppliers={suppliers}
-            onSupplierCreated={onSupplierCreated}
-            onSaved={onSaved}
-            onOpenChange={onOpenChange}
-          />
+          <InventoryItemForm key={item?.id ?? "create"} item={item} onSaved={onSaved} onOpenChange={onOpenChange} />
         )}
       </DialogContent>
     </Dialog>
@@ -104,38 +87,16 @@ export function InventoryItemFormDialog({
 
 function InventoryItemForm({
   item,
-  suppliers,
-  onSupplierCreated,
   onSaved,
   onOpenChange,
 }: {
   item: InventoryItemRow | null;
-  suppliers: SupplierOption[];
-  onSupplierCreated: (supplier: SupplierOption) => void;
   onSaved: () => void;
   onOpenChange: (open: boolean) => void;
 }) {
   const [form, setForm] = useState<FormState>(() => initialFormState(item));
-  const [newSupplierName, setNewSupplierName] = useState("");
-  const [addingSupplier, setAddingSupplier] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  function handleAddSupplier() {
-    if (!newSupplierName.trim()) return;
-    startTransition(async () => {
-      const res = await createSupplier(newSupplierName.trim());
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
-      }
-      onSupplierCreated(res.data);
-      setForm((f) => ({ ...f, supplierId: res.data.id }));
-      setNewSupplierName("");
-      setAddingSupplier(false);
-      toast.success(`Proveedor "${res.data.name}" creado`);
-    });
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,9 +108,7 @@ function InventoryItemForm({
       unit: form.unit,
       minStock: form.minStock,
       maxStock: form.maxStock,
-      cost: form.cost || 0,
       price: form.price || undefined,
-      supplierId: form.supplierId,
       active: form.active,
     };
 
@@ -256,87 +215,16 @@ function InventoryItemForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cost">Costo</Label>
-            <Input
-              id="cost"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.cost}
-              onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="price">Precio (opcional)</Label>
-            <Input
-              id="price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.price}
-              onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-            />
-          </div>
-        </div>
-
         <div className="flex flex-col gap-1.5">
-          <Label>Proveedor</Label>
-          {addingSupplier ? (
-            <div className="flex gap-2">
-              <Input
-                autoFocus
-                placeholder="Nombre del proveedor"
-                value={newSupplierName}
-                onChange={(e) => setNewSupplierName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddSupplier();
-                  }
-                }}
-              />
-              <Button type="button" size="sm" onClick={handleAddSupplier} disabled={isPending}>
-                Agregar
-              </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setAddingSupplier(false)}>
-                Cancelar
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Select
-                value={form.supplierId || "none"}
-                onValueChange={(v) => setForm((f) => ({ ...f, supplierId: v === "none" ? "" : (v ?? "") }))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sin proveedor">
-                    {(value: string) =>
-                      value === "none" ? "Sin proveedor" : suppliers.find((s) => s.id === value)?.name ?? "Sin proveedor"
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin proveedor</SelectItem>
-                  {suppliers.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setAddingSupplier(true)}
-                aria-label="Nuevo proveedor"
-              >
-                <Plus className="size-4" />
-              </Button>
-            </div>
-          )}
+          <Label htmlFor="price">Precio (opcional)</Label>
+          <Input
+            id="price"
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.price}
+            onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+          />
         </div>
 
         {item && (

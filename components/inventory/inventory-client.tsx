@@ -15,24 +15,24 @@ import {
 import { InventoryItemCard } from "@/components/inventory/inventory-item-card";
 import { InventoryItemFormDialog } from "@/components/inventory/inventory-item-form-dialog";
 import { StockAdjustDialog } from "@/components/inventory/stock-adjust-dialog";
+import { InventoryMovementsList } from "@/components/inventory/inventory-movements-list";
 import { getStockStatus, STOCK_STATUS_LABEL, INVENTORY_ITEM_TYPE_LABEL } from "@/lib/constants";
-import type { InventoryItemRow, SupplierOption } from "@/components/inventory/types";
+import type { InventoryItemRow, InventoryMovementRow } from "@/components/inventory/types";
 
 const typeFilterLabel: Record<string, string> = { all: "Todos los tipos", ...INVENTORY_ITEM_TYPE_LABEL };
 const stockFilterLabel: Record<string, string> = { all: "Cualquier stock", ...STOCK_STATUS_LABEL };
 
 export function InventoryClient({
   initialItems,
-  suppliers: initialSuppliers,
+  movements,
 }: {
   initialItems: InventoryItemRow[];
-  suppliers: SupplierOption[];
+  movements: InventoryMovementRow[];
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
-  const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItemRow | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
@@ -132,12 +132,15 @@ export function InventoryClient({
         </div>
       )}
 
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Movimientos recientes</h2>
+        <InventoryMovementsList movements={movements} />
+      </div>
+
       <InventoryItemFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         item={editingItem}
-        suppliers={suppliers}
-        onSupplierCreated={(supplier) => setSuppliers((prev) => [...prev, supplier])}
         onSaved={() => router.refresh()}
       />
 

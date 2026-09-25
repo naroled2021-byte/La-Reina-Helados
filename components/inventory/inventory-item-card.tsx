@@ -48,10 +48,7 @@ export function InventoryItemCard({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium leading-tight">{item.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {INVENTORY_ITEM_TYPE_LABEL[item.type] ?? item.type}
-            {item.supplierName ? ` · ${item.supplierName}` : ""}
-          </p>
+          <p className="text-xs text-muted-foreground">{INVENTORY_ITEM_TYPE_LABEL[item.type] ?? item.type}</p>
         </div>
       </div>
 
@@ -69,13 +66,7 @@ export function InventoryItemCard({
         </Badge>
       </div>
 
-      {(item.cost > 0 || item.price) && (
-        <p className="text-xs text-muted-foreground">
-          {item.cost > 0 && <>Costo: {currency.format(item.cost)}</>}
-          {item.cost > 0 && item.price ? " · " : ""}
-          {item.price && <>Precio: {currency.format(item.price)}</>}
-        </p>
-      )}
+      {item.price && <p className="text-xs text-muted-foreground">Precio: {currency.format(item.price)}</p>}
 
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
         <div className="flex items-center gap-2">

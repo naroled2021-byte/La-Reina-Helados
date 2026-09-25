@@ -15,3 +15,14 @@ export type InventoryItemRow = {
 };
 
 export type SupplierOption = { id: string; name: string };
+
+export type InventoryMovementRow = {
+  id: string;
+  itemName: string;
+  type: string;
+  quantity: number;
+  unit: string;
+  reason: string | null;
+  userName: string | null;
+  createdAt: string;
+};

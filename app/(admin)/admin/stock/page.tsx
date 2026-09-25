@@ -5,12 +5,16 @@ import { InventoryClient } from "@/components/inventory/inventory-client";
 export default async function StockPage() {
   await requirePermission("inventory.manage");
 
-  const [items, suppliers] = await Promise.all([
+  const [items, movements] = await Promise.all([
     db.inventoryItem.findMany({
       include: { supplier: true, flavor: true },
       orderBy: [{ active: "desc" }, { name: "asc" }],
     }),
-    db.supplier.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    db.inventoryMovement.findMany({
+      include: { inventoryItem: true, user: true },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
   ]);
 
   return (
@@ -38,7 +42,16 @@ export default async function StockPage() {
           active: i.active,
           isFlavor: !!i.flavor,
         }))}
-        suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}
+        movements={movements.map((m) => ({
+          id: m.id,
+          itemName: m.inventoryItem.name,
+          type: m.type,
+          quantity: m.quantity,
+          unit: m.inventoryItem.unit,
+          reason: m.reason,
+          userName: m.user?.name ?? null,
+          createdAt: m.createdAt.toISOString(),
+        }))}
       />
     </div>
   );
