@@ -1,16 +1,12 @@
 import { db } from "@/lib/db";
 import { ORDER_STATUS, PAYMENT_METHOD_LABEL, getStockStatus } from "@/lib/constants";
 import { computeExpectedCash } from "@/lib/cash-utils";
-import { startOfDayAR } from "@/lib/date-ar";
-
-function startOfMonth(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
+import { startOfDayAR, startOfMonthAR, dateKeyAR, hourAR } from "@/lib/date-ar";
 
 export async function getDashboardData() {
   const now = new Date();
   const today = startOfDayAR(now);
-  const monthStart = startOfMonth(now);
+  const monthStart = startOfMonthAR(now);
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
@@ -90,10 +86,10 @@ export async function getDashboardData() {
   for (let i = 0; i < 7; i++) {
     const d = new Date(sevenDaysAgo);
     d.setDate(d.getDate() + i);
-    salesByDayMap.set(d.toISOString().slice(0, 10), 0);
+    salesByDayMap.set(dateKeyAR(d), 0);
   }
   for (const o of ordersLast7Days) {
-    const key = o.createdAt.toISOString().slice(0, 10);
+    const key = dateKeyAR(o.createdAt);
     salesByDayMap.set(key, (salesByDayMap.get(key) ?? 0) + o.total);
   }
   const salesByDay = Array.from(salesByDayMap.entries()).map(([date, total]) => ({
@@ -136,7 +132,7 @@ export async function getDashboardData() {
   // Horarios de mayor venta
   const hourMap = new Map<number, number>();
   for (const o of ordersLast7Days) {
-    const h = o.createdAt.getHours();
+    const h = hourAR(o.createdAt);
     hourMap.set(h, (hourMap.get(h) ?? 0) + o.total);
   }
   const peakHours = Array.from({ length: 24 }, (_, h) => ({
