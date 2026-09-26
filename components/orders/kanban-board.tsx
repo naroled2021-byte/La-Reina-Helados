@@ -74,37 +74,47 @@ const columns: { status: string; title: string; next: string | null; nextLabel: 
 
 export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[]; ticketSettings: TicketSettings }) {
   const router = useRouter();
-  const knownIds = useRef<Set<string> | null>(null);
+  // Antes solo guardaba qué IDs ya se habían visto; ahora guarda el último estado de cada
+  // uno, porque necesito detectar la TRANSICIÓN a Confirmado, no solo la llegada.
+  const knownStatuses = useRef<Map<string, string> | null>(null);
   const [printQueue, setPrintQueue] = useState<TicketData[]>([]);
   const printingRef = useRef(false);
 
   useEffect(() => {
-    const currentIds = new Set(orders.map((o) => o.id));
+    const currentStatuses = new Map(orders.map((o) => [o.id, o.status]));
     console.log("[pedidos-debug] poll tick, orders:", orders.map((o) => `#${o.number}(${o.status}/${o.channel})`));
 
-    if (knownIds.current) {
-      const newReceived = orders.filter(
-        (o) => o.status === ORDER_STATUS.RECEIVED && !knownIds.current!.has(o.id)
-      );
-      console.log("[pedidos-debug] newReceived:", newReceived.map((o) => `#${o.number}`));
-      for (const order of newReceived) {
+    if (knownStatuses.current) {
+      const prevStatuses = knownStatuses.current;
+      const newArrivals = orders.filter((o) => o.status === ORDER_STATUS.RECEIVED && !prevStatuses.has(o.id));
+      console.log("[pedidos-debug] newArrivals:", newArrivals.map((o) => `#${o.number}`));
+      for (const order of newArrivals) {
         toast.info(`Nuevo pedido #${order.number}`);
       }
-      if (newReceived.length > 0) playNotificationSound();
+      if (newArrivals.length > 0) playNotificationSound();
+
+      // Mostrador/Ventas (COUNTER) imprimen apenas llegan, como siempre. Autoservicio
+      // (SELF_SERVICE) ya no imprime solo al llegar — recién cuando alguien lo confirma
+      // desde la columna Nuevos, para poder revisarlo antes de gastar el ticket.
+      const newCounterArrivals = newArrivals.filter((o) => o.channel !== ORDER_CHANNEL.SELF_SERVICE);
+      const justConfirmed = orders.filter(
+        (o) => o.status === ORDER_STATUS.CONFIRMED && prevStatuses.get(o.id) === ORDER_STATUS.RECEIVED
+      );
+      const toPrint = [...newCounterArrivals, ...justConfirmed];
 
       // Toda la impresión pasa por acá, sin importar desde qué pantalla o dispositivo se
       // haya cargado el pedido (Mostrador, Ventas, Autoservicio) — es la única forma de que
       // dispositivos sin impresora propia (como una tablet) terminen imprimiendo: el pedido
       // viaja hasta la PC que sí tiene la impresora y esta ventana lo imprime por ellos.
-      if (newReceived.length > 0) {
-        setPrintQueue((prev) => [...prev, ...newReceived.map(toTicketData)]);
-        console.log("[pedidos-debug] queued for print:", newReceived.map((o) => o.number));
+      if (toPrint.length > 0) {
+        setPrintQueue((prev) => [...prev, ...toPrint.map(toTicketData)]);
+        console.log("[pedidos-debug] queued for print:", toPrint.map((o) => o.number));
       }
     } else {
       console.log("[pedidos-debug] first mount, marking all as known, none will print");
     }
 
-    knownIds.current = currentIds;
+    knownStatuses.current = currentStatuses;
   }, [orders]);
 
   function handleManualPrint(order: KanbanOrder) {
