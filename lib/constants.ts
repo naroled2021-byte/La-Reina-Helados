@@ -22,6 +22,7 @@ export const SELF_SERVICE_DELIVERY_FEE = 500;
 
 export const ORDER_STATUS = {
   RECEIVED: "RECEIVED",
+  CONFIRMED: "CONFIRMED",
   PREPARING: "PREPARING",
   READY: "READY",
   DELIVERED: "DELIVERED",
@@ -30,6 +31,7 @@ export const ORDER_STATUS = {
 
 export const ORDER_STATUS_LABEL: Record<string, string> = {
   RECEIVED: "Recibido",
+  CONFIRMED: "Confirmado",
   PREPARING: "En preparación",
   READY: "Preparado",
   DELIVERED: "Entregado",
@@ -38,6 +40,7 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
 
 export const ORDER_STATUS_COLOR: Record<string, string> = {
   RECEIVED: "#FBBF24",
+  CONFIRMED: "#FB923C",
   PREPARING: "#60A5FA",
   READY: "#A78BFA",
   DELIVERED: "#34D399",

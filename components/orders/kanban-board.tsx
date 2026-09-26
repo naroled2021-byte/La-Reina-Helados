@@ -43,7 +43,18 @@ function toTicketData(order: KanbanOrder): TicketData {
 }
 
 const columns: { status: string; title: string; next: string | null; nextLabel: string | null; prev: string | null }[] = [
+  // Los pedidos de Autoservicio llegan solos, sin que nadie del local los haya visto — por
+  // eso en esta columna, para ellos, el botón dice "Confirmar" (pasa a la columna
+  // Confirmados) en vez de "Preparar" directo. Los de Mostrador/Ventas los carga el propio
+  // local, así que siguen yendo directo a preparación como siempre (ver el render de abajo).
   { status: ORDER_STATUS.RECEIVED, title: "Nuevos", next: ORDER_STATUS.PREPARING, nextLabel: "Preparar", prev: null },
+  {
+    status: ORDER_STATUS.CONFIRMED,
+    title: "Confirmados",
+    next: ORDER_STATUS.PREPARING,
+    nextLabel: "Preparar",
+    prev: ORDER_STATUS.RECEIVED,
+  },
   {
     status: ORDER_STATUS.PREPARING,
     title: "En preparación",
@@ -129,7 +140,7 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
   }, [router]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {columns.map((col) => {
         const columnOrders = orders.filter((o) => o.status === col.status);
         return (
@@ -144,16 +155,20 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
                   Sin pedidos
                 </p>
               ) : (
-                columnOrders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    prevStatus={col.prev}
-                    nextStatus={col.next}
-                    nextLabel={col.nextLabel}
-                    onPrint={handleManualPrint}
-                  />
-                ))
+                columnOrders.map((order) => {
+                  const isSelfServiceNew =
+                    col.status === ORDER_STATUS.RECEIVED && order.channel === ORDER_CHANNEL.SELF_SERVICE;
+                  return (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      prevStatus={col.prev}
+                      nextStatus={isSelfServiceNew ? ORDER_STATUS.CONFIRMED : col.next}
+                      nextLabel={isSelfServiceNew ? "Confirmar" : col.nextLabel}
+                      onPrint={handleManualPrint}
+                    />
+                  );
+                })
               )}
             </div>
           </div>

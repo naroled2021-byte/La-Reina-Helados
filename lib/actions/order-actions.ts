@@ -9,6 +9,7 @@ type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: s
 
 const movableStatuses = [
   ORDER_STATUS.RECEIVED,
+  ORDER_STATUS.CONFIRMED,
   ORDER_STATUS.PREPARING,
   ORDER_STATUS.READY,
   ORDER_STATUS.DELIVERED,
