@@ -263,7 +263,7 @@ export function AutoservicioClient({
               <Input
                 value={addressReference}
                 onChange={(e) => setAddressReference(e.target.value)}
-                placeholder="Referencia (piso, depto, entre calles...)"
+                placeholder="Entre calle y referencia (ej: casa rejas)"
                 aria-label="Referencia"
               />
 
