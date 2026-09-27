@@ -21,7 +21,7 @@ import { TodaySalesList } from "@/components/sales/today-sales-list";
 import { createSale } from "@/lib/actions/sale-actions";
 import { createCustomer } from "@/lib/actions/customer-actions";
 import { currency } from "@/lib/format";
-import { ORDER_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import { ORDER_TYPE_LABEL, PAYMENT_METHOD_LABEL, SELF_SERVICE_DELIVERY_FEE } from "@/lib/constants";
 import type {
   CartLine,
   SaleCustomer,
@@ -68,7 +68,8 @@ export function SalesClient({
     [cart]
   );
   const discountValue = Number(discount) || 0;
-  const total = Math.max(subtotal - discountValue, 0);
+  const deliveryFee = orderType === "DELIVERY" ? SELF_SERVICE_DELIVERY_FEE : 0;
+  const total = Math.max(subtotal - discountValue, 0) + deliveryFee;
 
   function handlePickProduct(product: SaleProduct) {
     if (product.allowsFlavors) {
@@ -358,6 +359,12 @@ export function SalesClient({
               <div className="flex justify-between text-muted-foreground">
                 <span>Descuento</span>
                 <span>-{currency.format(discountValue)}</span>
+              </div>
+            )}
+            {deliveryFee > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Envío</span>
+                <span>{currency.format(deliveryFee)}</span>
               </div>
             )}
             <div className="flex justify-between text-base font-semibold">

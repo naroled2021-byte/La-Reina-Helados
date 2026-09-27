@@ -4,7 +4,14 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/auth-helpers";
 import { saleSchema, type SaleInput } from "@/lib/validations/sale";
-import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD, CASH_MOVEMENT_TYPE, NOTIFICATION_TYPE } from "@/lib/constants";
+import {
+  ORDER_STATUS,
+  ORDER_CHANNEL,
+  PAYMENT_METHOD,
+  CASH_MOVEMENT_TYPE,
+  NOTIFICATION_TYPE,
+  SELF_SERVICE_DELIVERY_FEE,
+} from "@/lib/constants";
 import { deductStockForSale } from "@/lib/stock-deduction";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -30,7 +37,9 @@ export async function createSale(
     return sum + product.price * item.quantity;
   }, 0);
   const discount = Math.min(data.discount, subtotal);
-  const total = Math.max(subtotal - discount, 0);
+  const deliveryFee = data.type === "DELIVERY" ? SELF_SERVICE_DELIVERY_FEE : 0;
+  const cashTotal = Math.max(subtotal - discount, 0);
+  const total = cashTotal + deliveryFee;
 
   const result = await db.$transaction(async (tx) => {
     const max = await tx.order.aggregate({ _max: { number: true } });
@@ -80,11 +89,14 @@ export async function createSale(
 
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
     if (openRegister) {
+      // El envío no entra a la caja del local (queda con el repartidor) — el efectivo
+      // esperado de Caja solo debe reflejar el valor de los productos, no el total del
+      // pedido (que sí incluye el envío, para el ticket y lo que paga el cliente).
       await tx.cashMovement.create({
         data: {
           cashRegisterId: openRegister.id,
           type: data.paymentMethod === PAYMENT_METHOD.CASH ? CASH_MOVEMENT_TYPE.SALE_CASH : CASH_MOVEMENT_TYPE.SALE_DIGITAL,
-          amount: total,
+          amount: cashTotal,
           paymentMethod: data.paymentMethod,
           description: `Venta pedido #${order.number}`,
           userId: session.user.id,
