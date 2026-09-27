@@ -149,43 +149,81 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
     return () => clearInterval(interval);
   }, [router]);
 
+  const counterOrders = orders.filter((o) => o.channel !== ORDER_CHANNEL.SELF_SERVICE);
+  const selfServiceOrders = orders.filter((o) => o.channel === ORDER_CHANNEL.SELF_SERVICE);
+  // Confirmados solo existe para Autoservicio (ver comentario de "columns" arriba) — en la
+  // fila de Mostrador/Ventas esa columna siempre estaría vacía, así que no se muestra ahí.
+  const counterColumns = columns.filter((col) => col.status !== ORDER_STATUS.CONFIRMED);
+
   return (
-    <div className="flex flex-col gap-4">
-      {columns.map((col) => {
-        const columnOrders = orders.filter((o) => o.status === col.status);
-        return (
-          <div key={col.status} className="flex flex-col gap-3 rounded-2xl bg-muted/40 p-3">
-            <div className="flex items-center justify-between px-1">
-              <h3 className="text-sm font-semibold">{col.title}</h3>
-              <span className="text-xs text-muted-foreground">{columnOrders.length}</span>
-            </div>
-            <div className="flex flex-col gap-2">
-              {columnOrders.length === 0 ? (
-                <p className="rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
-                  Sin pedidos
-                </p>
-              ) : (
-                columnOrders.map((order) => {
-                  const isSelfServiceNew =
-                    col.status === ORDER_STATUS.RECEIVED && order.channel === ORDER_CHANNEL.SELF_SERVICE;
-                  return (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      prevStatus={col.prev}
-                      nextStatus={isSelfServiceNew ? ORDER_STATUS.CONFIRMED : col.next}
-                      nextLabel={isSelfServiceNew ? "Confirmar" : col.nextLabel}
-                      onPrint={handleManualPrint}
-                    />
-                  );
-                })
-              )}
-            </div>
-          </div>
-        );
-      })}
+    <div className="flex flex-col gap-8">
+      <OrderBoardRow
+        title="Mostrador / Ventas"
+        columns={counterColumns}
+        orders={counterOrders}
+        onManualPrint={handleManualPrint}
+      />
+      <OrderBoardRow
+        title="Autoservicio"
+        columns={columns}
+        orders={selfServiceOrders}
+        onManualPrint={handleManualPrint}
+      />
 
       <TicketView ticket={printQueue[0] ?? null} settings={ticketSettings} onClose={() => {}} silent />
+    </div>
+  );
+}
+
+function OrderBoardRow({
+  title,
+  columns: rowColumns,
+  orders,
+  onManualPrint,
+}: {
+  title: string;
+  columns: typeof columns;
+  orders: KanbanOrder[];
+  onManualPrint: (order: KanbanOrder) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-base font-semibold">{title}</h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {rowColumns.map((col) => {
+          const columnOrders = orders.filter((o) => o.status === col.status);
+          return (
+            <div key={col.status} className="flex flex-col gap-3 rounded-2xl bg-muted/40 p-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-sm font-semibold">{col.title}</h3>
+                <span className="text-xs text-muted-foreground">{columnOrders.length}</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {columnOrders.length === 0 ? (
+                  <p className="rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
+                    Sin pedidos
+                  </p>
+                ) : (
+                  columnOrders.map((order) => {
+                    const isSelfServiceNew =
+                      col.status === ORDER_STATUS.RECEIVED && order.channel === ORDER_CHANNEL.SELF_SERVICE;
+                    return (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        prevStatus={col.prev}
+                        nextStatus={isSelfServiceNew ? ORDER_STATUS.CONFIRMED : col.next}
+                        nextLabel={isSelfServiceNew ? "Confirmar" : col.nextLabel}
+                        onPrint={onManualPrint}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
