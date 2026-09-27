@@ -65,7 +65,7 @@ function FlavorPickerBody({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
+      <div className="grid max-h-96 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
         {flavors.map((flavor) => {
           const isSelected = selected.includes(flavor.id);
           return (
@@ -74,18 +74,18 @@ function FlavorPickerBody({
               type="button"
               onClick={() => toggle(flavor.id)}
               className={cn(
-                "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors",
+                "flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-base font-medium transition-colors",
                 isSelected ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted"
               )}
             >
               {isSelected ? (
-                <Check className="size-3.5 shrink-0" />
+                <Check className="size-4 shrink-0" />
               ) : flavor.popular ? (
-                <Star className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
+                <Star className="size-4 shrink-0 fill-amber-400 text-amber-400" />
               ) : (
-                <span className="size-3.5 shrink-0" />
+                <span className="size-4 shrink-0" />
               )}
-              <span className="truncate">{flavor.name}</span>
+              <span>{flavor.name}</span>
             </button>
           );
         })}
