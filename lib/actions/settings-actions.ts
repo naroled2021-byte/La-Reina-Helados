@@ -100,7 +100,10 @@ export async function updateAutoservicioSettings(input: AutoservicioSettingsInpu
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const d = parsed.data;
 
-  await upsertSettings([["autoservicio.waitMinutes", String(d.waitMinutes), "autoservicio"]]);
+  await upsertSettings([
+    ["autoservicio.waitMinutes", String(d.waitMinutes), "autoservicio"],
+    ["autoservicio.enabled", String(d.enabled), "autoservicio"],
+  ]);
 
   await db.auditLog.create({
     data: { userId: session.user.id, action: "settings.update_autoservicio", entity: "Setting" },

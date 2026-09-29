@@ -28,6 +28,13 @@ export async function createSelfServiceOrder(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const data = parsed.data;
 
+  // Defensa en profundidad: la página ya oculta el formulario cuando está apagado, pero
+  // esto evita que alguien mande el pedido llamando la action directamente.
+  const enabledSetting = await db.setting.findUnique({ where: { key: "autoservicio.enabled" } });
+  if (enabledSetting?.value === "false") {
+    return { ok: false, error: "El Autoservicio está cerrado en este momento" };
+  }
+
   const productIds = data.items.map((i) => i.productId);
   const products = await db.product.findMany({ where: { id: { in: productIds }, active: true } });
   const productMap = new Map(products.map((p) => [p.id, p]));

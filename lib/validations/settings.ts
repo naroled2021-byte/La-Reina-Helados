@@ -30,6 +30,7 @@ export const printSettingsSchema = z.object({
 
 export const autoservicioSettingsSchema = z.object({
   waitMinutes: z.coerce.number().int().min(0).max(180),
+  enabled: z.boolean(),
 });
 
 export const promotionSchema = z.object({
