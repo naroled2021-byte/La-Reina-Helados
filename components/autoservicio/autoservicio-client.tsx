@@ -56,6 +56,7 @@ export function AutoservicioClient({
     .filter(Boolean)
     .join(" - ");
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [observations, setObservations] = useState("");
   const [cashTendered, setCashTendered] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +105,7 @@ export function AutoservicioClient({
     setAddressNumber("");
     setAddressReference("");
     setCustomerName("");
+    setCustomerPhone("");
     setObservations("");
     setCashTendered("");
     setConfirmed(null);
@@ -119,6 +121,10 @@ export function AutoservicioClient({
       setError("Completá tu nombre");
       return;
     }
+    if (!customerPhone.trim()) {
+      setError("Completá tu teléfono");
+      return;
+    }
     if (orderType === "DELIVERY" && !deliveryAddress.trim()) {
       setError("Completá la dirección de entrega");
       return;
@@ -131,6 +137,7 @@ export function AutoservicioClient({
     startTransition(async () => {
       const res = await createSelfServiceOrder({
         customerName,
+        customerPhone,
         type: orderType as never,
         deliveryAddress,
         observations,
@@ -285,6 +292,19 @@ export function AutoservicioClient({
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Nombre y apellido"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="customerPhone">Tu teléfono</Label>
+            <Input
+              id="customerPhone"
+              type="tel"
+              inputMode="tel"
+              required
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              placeholder="Ej: 351 555 1234"
             />
           </div>
 

@@ -97,7 +97,12 @@ export function OrderCard({
       </div>
 
       <p className="line-clamp-2 text-xs text-muted-foreground">{order.itemsSummary}</p>
-      {order.customerName && <p className="text-xs font-medium">{order.customerName}</p>}
+      {order.customerName && (
+        <p className="text-xs font-medium">
+          {order.customerName}
+          {order.customerPhone && <span className="font-normal text-muted-foreground"> · {order.customerPhone}</span>}
+        </p>
+      )}
       {order.deliveryAddress && (
         <p className="truncate text-xs text-muted-foreground">{order.deliveryAddress}</p>
       )}

@@ -11,6 +11,7 @@ export type KanbanOrder = {
   tableNumber: string | null;
   deliveryAddress: string | null;
   customerName: string | null;
+  customerPhone: string | null;
   notes: string | null;
   itemsSummary: string;
   paymentMethod: string | null;
