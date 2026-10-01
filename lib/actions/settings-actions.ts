@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { requirePermission } from "@/lib/auth-helpers";
+import { requirePermission, requireSession } from "@/lib/auth-helpers";
 import {
   generalSettingsSchema,
   themeSettingsSchema,
@@ -111,6 +111,29 @@ export async function updateAutoservicioSettings(input: AutoservicioSettingsInpu
 
   revalidatePath("/admin/configuracion");
   revalidatePath("/autoservicio");
+  return { ok: true, data: undefined };
+}
+
+// A diferencia de updateAutoservicioSettings (solo admins, desde Configuración), este
+// interruptor lo puede usar cualquier empleado logueado — pensado para apagar Autoservicio
+// rápido desde el local sin tener que ser administrador.
+export async function toggleAutoservicioEnabled(enabled: boolean): Promise<ActionResult> {
+  const session = await requireSession();
+
+  await upsertSettings([["autoservicio.enabled", String(enabled), "autoservicio"]]);
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "settings.toggle_autoservicio",
+      entity: "Setting",
+      metadata: JSON.stringify({ enabled }),
+    },
+  });
+
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/autoservicio");
+  revalidatePath("/admin/desactivar-autoservicio");
   return { ok: true, data: undefined };
 }
 
