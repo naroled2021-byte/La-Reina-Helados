@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/auth-helpers";
 import { getSalesPageData } from "@/lib/queries/sales";
+import { formatOrderNumber } from "@/lib/format";
 import { SalesClient } from "@/components/sales/sales-client";
 
 export default async function VentasPage() {
@@ -31,6 +32,7 @@ export default async function VentasPage() {
         todaySales={todaySales.map((o) => ({
           id: o.id,
           number: o.number,
+          displayNumber: formatOrderNumber(o.channel, o.channelNumber),
           createdAt: o.createdAt.toISOString(),
           total: o.total,
           status: o.status,

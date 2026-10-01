@@ -12,6 +12,7 @@ import {
   SELF_SERVICE_DELIVERY_FEE,
 } from "@/lib/constants";
 import { deductStockForSale } from "@/lib/stock-deduction";
+import { formatOrderNumber } from "@/lib/format";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -23,7 +24,7 @@ type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: s
  */
 export async function createSelfServiceOrder(
   input: SelfServiceOrderInput
-): Promise<ActionResult<{ number: number; total: number }>> {
+): Promise<ActionResult<{ number: number; displayNumber: string; total: number }>> {
   const parsed = selfServiceOrderSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const data = parsed.data;
@@ -79,12 +80,17 @@ export async function createSelfServiceOrder(
       });
     }
 
-    const max = await tx.order.aggregate({ _max: { number: true } });
+    const [max, maxChannel] = await Promise.all([
+      tx.order.aggregate({ _max: { number: true } }),
+      tx.order.aggregate({ where: { channel: ORDER_CHANNEL.SELF_SERVICE }, _max: { channelNumber: true } }),
+    ]);
     const number = (max._max.number ?? 1040) + 1;
+    const channelNumber = (maxChannel._max.channelNumber ?? 0) + 1;
 
     const order = await tx.order.create({
       data: {
         number,
+        channelNumber,
         type: data.type,
         status: ORDER_STATUS.RECEIVED,
         channel: ORDER_CHANNEL.SELF_SERVICE,
@@ -120,7 +126,7 @@ export async function createSelfServiceOrder(
     await deductStockForSale(
       tx,
       data.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      order.number
+      formatOrderNumber(order.channel, order.channelNumber)
     );
 
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
@@ -134,7 +140,7 @@ export async function createSelfServiceOrder(
           type: CASH_MOVEMENT_TYPE.SALE_CASH,
           amount: subtotal,
           paymentMethod: PAYMENT_METHOD.CASH,
-          description: `Venta pedido #${order.number} (autoservicio)`,
+          description: `Venta pedido #${formatOrderNumber(order.channel, order.channelNumber)} (autoservicio)`,
           userId: null,
           orderId: order.id,
         },
@@ -155,15 +161,18 @@ export async function createSelfServiceOrder(
       data: {
         type: NOTIFICATION_TYPE.NEW_ORDER,
         title: "Pedido de autoservicio",
-        message: `Pedido #${order.number} por $${total.toLocaleString("es-AR")}`,
+        message: `Pedido #${formatOrderNumber(order.channel, order.channelNumber)} por $${total.toLocaleString("es-AR")}`,
         link: "/admin/pedidos",
       },
     });
 
     return order;
-  });
+  }, { timeout: 15000 });
 
   revalidatePath("/admin/pedidos");
   revalidatePath("/admin");
-  return { ok: true, data: { number: result.number, total } };
+  return {
+    ok: true,
+    data: { number: result.number, displayNumber: formatOrderNumber(result.channel, result.channelNumber), total },
+  };
 }

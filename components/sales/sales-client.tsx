@@ -177,7 +177,7 @@ export function SalesClient({
         setError(res.error);
         return;
       }
-      toast.success(`Venta #${res.data.number} confirmada — ${currency.format(res.data.total)}`);
+      toast.success(`Venta #${res.data.displayNumber} confirmada — ${currency.format(res.data.total)}`);
       resetCart();
       router.refresh();
     });

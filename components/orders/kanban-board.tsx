@@ -8,6 +8,7 @@ import { TicketView, type TicketData, type TicketSettings } from "@/components/m
 import { logOrderReprint } from "@/lib/actions/order-actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import { formatOrderNumber } from "@/lib/format";
 import type { KanbanOrder } from "@/components/orders/types";
 
 // Mostrador/Ventas (COUNTER) imprimen 1 sola copia; Autoservicio (SELF_SERVICE) imprime 2 —
@@ -20,6 +21,7 @@ function copiesForChannel(channel: string): number {
 function toTicketData(order: KanbanOrder): TicketData {
   return {
     number: order.number,
+    displayNumber: formatOrderNumber(order.channel, order.channelNumber),
     createdAt: order.createdAt,
     items: order.orderItems.map((it, i) => ({
       key: String(i),
@@ -89,7 +91,7 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
       const newArrivals = orders.filter((o) => o.status === ORDER_STATUS.RECEIVED && !prevStatuses.has(o.id));
       console.log("[pedidos-debug] newArrivals:", newArrivals.map((o) => `#${o.number}`));
       for (const order of newArrivals) {
-        toast.info(`Nuevo pedido #${order.number}`);
+        toast.info(`Nuevo pedido #${formatOrderNumber(order.channel, order.channelNumber)}`);
       }
       if (newArrivals.length > 0) playNotificationSound();
 
@@ -119,7 +121,7 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
 
   function handleManualPrint(order: KanbanOrder) {
     setPrintQueue((prev) => [...prev, toTicketData(order)]);
-    toast.info(`Imprimiendo pedido #${order.number}...`);
+    toast.info(`Imprimiendo pedido #${formatOrderNumber(order.channel, order.channelNumber)}...`);
     void logOrderReprint(order.id);
   }
 

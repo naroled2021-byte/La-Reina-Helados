@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { updateOrderStatus, updateOrderPaymentMethod } from "@/lib/actions/order-actions";
 import { cancelSale } from "@/lib/actions/sale-actions";
-import { currency } from "@/lib/format";
+import { currency, formatOrderNumber } from "@/lib/format";
 import { ORDER_TYPE_LABEL, ORDER_CHANNEL, PAYMENT_METHOD, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import type { KanbanOrder } from "@/components/orders/types";
 
@@ -37,6 +37,7 @@ export function OrderCard({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const TypeIcon = typeIcon[order.type as keyof typeof typeIcon] ?? Store;
+  const displayNumber = formatOrderNumber(order.channel, order.channelNumber);
 
   function move(status: string) {
     startTransition(async () => {
@@ -61,14 +62,14 @@ export function OrderCard({
   }
 
   function handleCancel() {
-    if (!confirm(`¿Cancelar el pedido #${order.number}?`)) return;
+    if (!confirm(`¿Cancelar el pedido #${displayNumber}?`)) return;
     startTransition(async () => {
       const res = await cancelSale(order.id);
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      toast.success(`Pedido #${order.number} cancelado`);
+      toast.success(`Pedido #${displayNumber} cancelado`);
       router.refresh();
     });
   }
@@ -76,7 +77,7 @@ export function OrderCard({
   return (
     <div className="flex flex-col gap-2 rounded-2xl border bg-card p-3 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="font-medium">#{order.number}</span>
+        <span className="font-medium">#{displayNumber}</span>
         <span className="text-xs text-muted-foreground">
           {new Date(order.createdAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
         </span>

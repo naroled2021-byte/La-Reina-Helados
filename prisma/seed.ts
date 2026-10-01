@@ -354,6 +354,8 @@ async function main() {
   // ---------- Pedidos, pagos y movimientos de caja ----------
   console.log("Creando pedidos demo...");
   let orderNumber = 1041;
+  let counterChannelNumber = 0;
+  let selfServiceChannelNumber = 0;
   const customerStats = new Map<string, { totalSpent: number; lastPurchaseAt: Date }>();
   const statusesPast = [ORDER_STATUS.DELIVERED, ORDER_STATUS.DELIVERED, ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED];
   const statusesToday = [ORDER_STATUS.RECEIVED, ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED];
@@ -397,13 +399,17 @@ async function main() {
     const discount = Math.random() > 0.8 ? Math.round(subtotal * 0.1) : 0;
     const total = subtotal - discount;
     const createdAt = daysAgo(dayOffset, randInt(10, 21), randInt(0, 59));
+    const channel = Math.random() > 0.7 ? ORDER_CHANNEL.SELF_SERVICE : ORDER_CHANNEL.COUNTER;
+    const channelNumber =
+      channel === ORDER_CHANNEL.SELF_SERVICE ? ++selfServiceChannelNumber : ++counterChannelNumber;
 
     const order = await db.order.create({
       data: {
         number: orderNumber++,
+        channelNumber,
         type,
         status,
-        channel: Math.random() > 0.7 ? ORDER_CHANNEL.SELF_SERVICE : ORDER_CHANNEL.COUNTER,
+        channel,
         customerId: customer?.id,
         servedById: seller.id,
         subtotal,

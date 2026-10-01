@@ -19,6 +19,7 @@ import { updatePrintSettings } from "@/lib/actions/settings-actions";
 
 const TEST_TICKET: TicketData = {
   number: 0,
+  displayNumber: "0000",
   createdAt: new Date().toISOString(),
   items: [
     { key: "1", productId: "", productName: "1/4 Kilo", unitPrice: 5500, quantity: 1, flavorIds: [], flavorNames: ["Chocolate", "Dulce de leche"] },

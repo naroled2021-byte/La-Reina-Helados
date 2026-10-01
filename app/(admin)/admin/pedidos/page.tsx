@@ -20,6 +20,7 @@ export default async function PedidosPage() {
         orders={orders.map((o) => ({
           id: o.id,
           number: o.number,
+          channelNumber: o.channelNumber,
           type: o.type,
           status: o.status,
           channel: o.channel,

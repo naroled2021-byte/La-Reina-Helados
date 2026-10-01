@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getCustomerOrders } from "@/lib/actions/customer-actions";
-import { currency } from "@/lib/format";
+import { currency, formatOrderNumber } from "@/lib/format";
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/constants";
 import type { CustomerRow } from "@/components/customers/types";
 
@@ -66,7 +66,7 @@ function HistoryBody({ customer }: { customer: CustomerRow }) {
             <div key={order.id} className="flex items-center justify-between gap-2 rounded-xl border px-3 py-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">#{order.number}</span>
+                  <span className="text-sm font-medium">#{formatOrderNumber(order.channel, order.channelNumber)}</span>
                   <Badge
                     variant="outline"
                     className="border-none text-[10px]"

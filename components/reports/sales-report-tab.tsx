@@ -50,7 +50,7 @@ export function SalesReportTab({ range }: { range: DateRange }) {
 
       <ReportTable
         columns={[
-          { key: "number", label: "Pedido", render: (r) => `#${r.number}` },
+          { key: "number", label: "Pedido", render: (r) => `#${r.number}` /* r.number ya viene formateado (0001 / 001) */ },
           {
             key: "date",
             label: "Fecha",

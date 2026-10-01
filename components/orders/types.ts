@@ -1,6 +1,7 @@
 export type KanbanOrder = {
   id: string;
   number: number;
+  channelNumber: number;
   type: string;
   status: string;
   channel: string;

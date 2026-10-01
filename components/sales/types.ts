@@ -32,6 +32,7 @@ export type CartLine = {
 export type TodaySale = {
   id: string;
   number: number;
+  displayNumber: string;
   createdAt: string;
   total: number;
   status: string;

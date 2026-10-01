@@ -13,12 +13,13 @@ import {
   SELF_SERVICE_DELIVERY_FEE,
 } from "@/lib/constants";
 import { deductStockForSale } from "@/lib/stock-deduction";
+import { formatOrderNumber } from "@/lib/format";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
 export async function createSale(
   input: SaleInput
-): Promise<ActionResult<{ orderId: string; number: number; total: number }>> {
+): Promise<ActionResult<{ orderId: string; number: number; displayNumber: string; total: number }>> {
   const session = await requirePermission("sales.create");
   const parsed = saleSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
@@ -42,12 +43,17 @@ export async function createSale(
   const total = cashTotal + deliveryFee;
 
   const result = await db.$transaction(async (tx) => {
-    const max = await tx.order.aggregate({ _max: { number: true } });
+    const [max, maxChannel] = await Promise.all([
+      tx.order.aggregate({ _max: { number: true } }),
+      tx.order.aggregate({ where: { channel: ORDER_CHANNEL.COUNTER }, _max: { channelNumber: true } }),
+    ]);
     const number = (max._max.number ?? 1040) + 1;
+    const channelNumber = (maxChannel._max.channelNumber ?? 0) + 1;
 
     const order = await tx.order.create({
       data: {
         number,
+        channelNumber,
         type: data.type,
         status: ORDER_STATUS.RECEIVED,
         channel: ORDER_CHANNEL.COUNTER,
@@ -83,7 +89,7 @@ export async function createSale(
     await deductStockForSale(
       tx,
       data.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      order.number,
+      formatOrderNumber(order.channel, order.channelNumber),
       session.user.id
     );
 
@@ -98,7 +104,7 @@ export async function createSale(
           type: data.paymentMethod === PAYMENT_METHOD.CASH ? CASH_MOVEMENT_TYPE.SALE_CASH : CASH_MOVEMENT_TYPE.SALE_DIGITAL,
           amount: cashTotal,
           paymentMethod: data.paymentMethod,
-          description: `Venta pedido #${order.number}`,
+          description: `Venta pedido #${formatOrderNumber(order.channel, order.channelNumber)}`,
           userId: session.user.id,
           orderId: order.id,
         },
@@ -130,17 +136,25 @@ export async function createSale(
       data: {
         type: NOTIFICATION_TYPE.NEW_ORDER,
         title: "Nueva venta",
-        message: `Pedido #${order.number} por $${total.toLocaleString("es-AR")}`,
+        message: `Pedido #${formatOrderNumber(order.channel, order.channelNumber)} por $${total.toLocaleString("es-AR")}`,
         link: "/admin/ventas",
       },
     });
 
     return order;
-  });
+  }, { timeout: 15000 });
 
   revalidatePath("/admin/ventas");
   revalidatePath("/admin");
-  return { ok: true, data: { orderId: result.id, number: result.number, total } };
+  return {
+    ok: true,
+    data: {
+      orderId: result.id,
+      number: result.number,
+      displayNumber: formatOrderNumber(result.channel, result.channelNumber),
+      total,
+    },
+  };
 }
 
 export async function cancelSale(orderId: string): Promise<ActionResult> {

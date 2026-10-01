@@ -36,7 +36,7 @@ export function AutoservicioClient({
   waitMinutes: number;
 }) {
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [confirmed, setConfirmed] = useState<{ number: number; total: number } | null>(null);
+  const [confirmed, setConfirmed] = useState<{ displayNumber: string; total: number } | null>(null);
 
   const formatProducts = useMemo(
     () =>
@@ -149,7 +149,7 @@ export function AutoservicioClient({
         setError(res.error);
         return;
       }
-      setConfirmed({ number: res.data.number, total: res.data.total });
+      setConfirmed({ displayNumber: res.data.displayNumber, total: res.data.total });
     });
   }
 
@@ -159,7 +159,7 @@ export function AutoservicioClient({
         <Card className="w-full max-w-md border-none text-center shadow-sm">
           <CardContent className="flex flex-col items-center gap-3 py-8">
             <CheckCircle2 className="size-14 text-primary" strokeWidth={1.5} />
-            <h2 className="text-xl font-semibold">¡Pedido #{confirmed.number} recibido!</h2>
+            <h2 className="text-xl font-semibold">¡Pedido #{confirmed.displayNumber} recibido!</h2>
             <p className="text-sm text-muted-foreground">
               Total: <span className="font-semibold text-foreground">{currency.format(confirmed.total)}</span>
               <br />

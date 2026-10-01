@@ -10,7 +10,7 @@ type TxClient = Prisma.TransactionClient;
 export async function deductStockForSale(
   tx: TxClient,
   items: { productId: string; quantity: number }[],
-  orderNumber: number,
+  orderDisplayNumber: string,
   userId: string | null = null
 ) {
   const productIds = [...new Set(items.map((i) => i.productId))];
@@ -45,7 +45,7 @@ export async function deductStockForSale(
             inventoryItemId: recipeItem.inventoryItemId,
             type: INVENTORY_MOVEMENT_TYPE.SALE,
             quantity: consumed,
-            reason: `Venta pedido #${orderNumber}`,
+            reason: `Venta pedido #${orderDisplayNumber}`,
             userId,
           },
         });

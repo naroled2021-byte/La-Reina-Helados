@@ -225,7 +225,8 @@ model Customer {
 
 model Order {
   id              String   @id @default(cuid())
-  number          Int      @unique // asignado en la app: correlativo a partir de 1000
+  number          Int      @unique // asignado en la app: correlativo global, interno (no se muestra)
+  channelNumber   Int      @default(0) // correlativo propio de cada canal: el que se muestra en tickets/pantallas
   type            String   // DINE_IN | TAKEAWAY | DELIVERY
   status          String   @default("RECEIVED") // RECEIVED | PREPARING | READY | DELIVERED | CANCELLED
   channel         String   @default("COUNTER") // COUNTER | SELF_SERVICE
@@ -245,6 +246,8 @@ model Order {
   items    OrderItem[]
   payments Payment[]
   cashMovements CashMovement[]
+
+  @@unique([channel, channelNumber])
 }
 
 model OrderItem {

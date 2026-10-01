@@ -86,7 +86,7 @@ export function ArticulosClient({
         setError(res.error);
         return;
       }
-      toast.success(`Pedido #${res.data.number} confirmado — ${currency.format(res.data.total)}`);
+      toast.success(`Pedido #${res.data.displayNumber} confirmado — ${currency.format(res.data.total)}`);
       setCart([]);
       setCartOpen(false);
       router.refresh();

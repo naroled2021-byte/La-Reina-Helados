@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { ORDER_STATUS, getStockStatus } from "@/lib/constants";
+import { formatOrderNumber } from "@/lib/format";
 import type { DateRange } from "@/lib/date-range";
 
 const notCancelled = { not: ORDER_STATUS.CANCELLED };
@@ -30,7 +31,7 @@ export async function getSalesReport({ from, to }: DateRange) {
     avgTicket,
     daily,
     rows: orders.map((o) => ({
-      number: o.number,
+      number: formatOrderNumber(o.channel, o.channelNumber),
       date: o.createdAt.toISOString(),
       type: o.type,
       status: o.status,

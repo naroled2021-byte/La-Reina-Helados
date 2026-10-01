@@ -12,6 +12,7 @@ import type { CartLine } from "@/components/sales/types";
 
 export type TicketData = {
   number: number;
+  displayNumber: string;
   createdAt: string;
   items: CartLine[];
   subtotal: number;
@@ -138,7 +139,7 @@ function ReceiptBody({
 
       <div className="flex w-full flex-col">
         <Line text={divider} />
-        {padRow(`Pedido #${ticket.number}`, date, width).map((l, i) => (
+        {padRow(`Pedido #${ticket.displayNumber}`, date, width).map((l, i) => (
           <Line key={i} text={l} />
         ))}
         <Line text={ORDER_TYPE_LABEL[ticket.orderType] ?? ticket.orderType} />

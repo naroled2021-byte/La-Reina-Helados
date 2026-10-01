@@ -16,14 +16,14 @@ export function TodaySalesList({ sales }: { sales: TodaySale[] }) {
   const [isPending, startTransition] = useTransition();
 
   function handleCancel(sale: TodaySale) {
-    if (!confirm(`¿Cancelar el pedido #${sale.number}?`)) return;
+    if (!confirm(`¿Cancelar el pedido #${sale.displayNumber}?`)) return;
     startTransition(async () => {
       const res = await cancelSale(sale.id);
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      toast.success(`Pedido #${sale.number} cancelado`);
+      toast.success(`Pedido #${sale.displayNumber} cancelado`);
       router.refresh();
     });
   }
@@ -47,7 +47,7 @@ export function TodaySalesList({ sales }: { sales: TodaySale[] }) {
           >
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium">#{sale.number}</span>
+                <span className="font-medium">#{sale.displayNumber}</span>
                 <Badge
                   variant="outline"
                   className="border-none text-[10px]"
