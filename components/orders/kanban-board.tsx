@@ -54,12 +54,9 @@ const columns: { status: string; title: string; next: string | null; nextLabel: 
 export function KanbanBoard({
   orders,
   ticketSettings,
-  printChannel,
 }: {
   orders: KanbanOrder[];
   ticketSettings: TicketSettings;
-  /** Si viene, esta ventana solo imprime sola los pedidos de este canal (ver page.tsx). */
-  printChannel?: string;
 }) {
   const router = useRouter();
   const knownIds = useRef<Set<string> | null>(null);
@@ -79,11 +76,10 @@ export function KanbanBoard({
       }
       if (newArrivals.length > 0) playNotificationSound();
 
-      // Si esta ventana tiene un canal asignado (?canal=... en la URL, ver page.tsx), solo
-      // imprime sola los pedidos de ESE canal — así cada impresora física conectada a esta PC
-      // solo recibe lo suyo. Sin canal asignado, imprime todo lo que llega (comportamiento
-      // general, para una PC con una sola impresora compartida).
-      const toPrint = printChannel ? newArrivals.filter((o) => o.channel === printChannel) : newArrivals;
+      // Autoservicio ya no imprime desde acá: lo maneja el agente local de impresión
+      // (/api/print-queue), que manda esos tickets directo a su propia impresora por nombre.
+      // Esta ventana solo sigue imprimiendo, como antes, los de Mostrador/Ventas.
+      const toPrint = newArrivals.filter((o) => o.channel !== ORDER_CHANNEL.SELF_SERVICE);
       if (toPrint.length > 0) {
         setPrintQueue((prev) => [...prev, ...toPrint.map(toTicketData)]);
         console.log("[pedidos-debug] queued for print:", toPrint.map((o) => o.number));
@@ -93,7 +89,7 @@ export function KanbanBoard({
     }
 
     knownIds.current = currentIds;
-  }, [orders, printChannel]);
+  }, [orders]);
 
   function handleManualPrint(order: KanbanOrder) {
     setPrintQueue((prev) => [...prev, toTicketData(order)]);

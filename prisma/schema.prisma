@@ -240,6 +240,7 @@ model Order {
   discount        Float    @default(0)
   total           Float    @default(0)
   notes           String?
+  printedAt       DateTime? // reclamado/impreso por el agente local de impresión (ver /api/print-queue)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
