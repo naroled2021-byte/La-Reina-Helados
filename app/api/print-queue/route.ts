@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { ORDER_STATUS, ORDER_CHANNEL } from "@/lib/constants";
-import { buildComandaText } from "@/lib/comanda-text";
+import { buildComandaLines } from "@/lib/comanda-text";
 import { getTicketSettings } from "@/lib/queries/settings";
 
 const CHANNEL_PARAM: Record<string, string> = {
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
   ]);
 
   const texts = jobsData.map((o) =>
-    buildComandaText(
+    buildComandaLines(
       {
         channel: o.channel,
         channelNumber: o.channelNumber,

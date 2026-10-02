@@ -1,12 +1,10 @@
 import { ORDER_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { currency, formatOrderNumber } from "@/lib/format";
 
-const WIDTH = 32; // ancho seguro en texto plano monoespaciado para 58mm
-
-function centerText(text: string, width: number): string {
-  if (text.length >= width) return text;
-  return " ".repeat(Math.floor((width - text.length) / 2)) + text;
-}
+// Ancho usado solo para decidir DÓNDE cortar un texto largo en varias líneas (direcciones,
+// notas, lista de sabores) — no para alinear ni centrar: eso lo hace el script que imprime,
+// midiendo el ancho real de cada línea en la impresora.
+const WRAP_WIDTH = 40;
 
 function wrapText(text: string, width: number): string[] {
   const words = text.split(" ").filter(Boolean);
@@ -25,23 +23,15 @@ function wrapText(text: string, width: number): string[] {
   return lines.length > 0 ? lines : [""];
 }
 
-function centeredLines(text: string, width: number): string[] {
-  return wrapText(text, width).map((l) => centerText(l, width));
+export type ComandaLine =
+  | { type: "divider" }
+  | { type: "text"; text: string; right?: string; align?: "center"; big?: boolean };
+
+function text(text: string, opts?: { right?: string; align?: "center"; big?: boolean }): ComandaLine {
+  return { type: "text", text, ...opts };
 }
 
-function padRow(left: string, right: string, width: number): string[] {
-  const gap = width - left.length - right.length;
-  if (gap < 1) {
-    const safeLeft = left.length > width ? left.slice(0, width) : left;
-    return [safeLeft, right.padStart(width)];
-  }
-  return [left + " ".repeat(gap) + right];
-}
-
-function itemRow(left: string, right: string, width: number): string[] {
-  if (left.length + 1 + right.length <= width) return padRow(left, right, width);
-  return [...wrapText(left, width), right.padStart(width)];
-}
+const divider: ComandaLine = { type: "divider" };
 
 export type ComandaSettings = {
   businessName: string;
@@ -66,70 +56,68 @@ export type ComandaOrder = {
   items: { productName: string; quantity: number; unitPrice: number; flavorNames: string[] }[];
 };
 
-/** Mismo formato que el ticket completo de Mostrador (logo aparte, lo pone el script que
- *  imprime), para que el de Autoservicio se vea igual — con la etiqueta "Autoservicio"
- *  agregada para distinguirlo apenas se mira. */
-export function buildComandaText(order: ComandaOrder, settings: ComandaSettings): string {
-  const divider = "-".repeat(WIDTH);
-  const lines: string[] = [];
+/** Mismo contenido que el ticket completo de Mostrador (logo aparte, lo agrega el script que
+ *  imprime), con la etiqueta "AUTOSERVICIO" agregada para distinguirlo de un vistazo. Devuelve
+ *  líneas con su alineación en vez de texto ya formateado, para que el centrado/alineado se
+ *  haga con el ancho real de la impresora, no con una estimación de caracteres. */
+export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings): ComandaLine[] {
+  const lines: ComandaLine[] = [];
 
-  for (const l of centeredLines(settings.businessName, WIDTH)) lines.push(l);
-  if (settings.address) for (const l of centeredLines(settings.address, WIDTH)) lines.push(l);
-  if (settings.phone) for (const l of centeredLines(`Tel: ${settings.phone}`, WIDTH)) lines.push(l);
+  lines.push(text(settings.businessName, { align: "center", big: true }));
+  if (settings.address) for (const l of wrapText(settings.address, WRAP_WIDTH)) lines.push(text(l, { align: "center" }));
+  if (settings.phone) lines.push(text(`Tel: ${settings.phone}`, { align: "center" }));
   if (settings.ticketHeader) {
     for (const raw of settings.ticketHeader.split("\n")) {
-      for (const l of centeredLines(raw, WIDTH)) lines.push(l);
+      for (const l of wrapText(raw, WRAP_WIDTH)) lines.push(text(l, { align: "center" }));
     }
   }
 
   lines.push(divider);
-  for (const l of centeredLines("AUTOSERVICIO", WIDTH)) lines.push(l);
+  lines.push(text("AUTOSERVICIO", { align: "center", big: true }));
   const date = order.createdAt.toLocaleString("es-AR", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
-  for (const l of padRow(`Pedido #${formatOrderNumber(order.channel, order.channelNumber)}`, date, WIDTH)) lines.push(l);
-  lines.push(ORDER_TYPE_LABEL[order.type] ?? order.type);
-  if (order.customerName) lines.push(`Cliente: ${order.customerName}`);
+  lines.push(text(`Pedido #${formatOrderNumber(order.channel, order.channelNumber)}`, { right: date }));
+  lines.push(text(ORDER_TYPE_LABEL[order.type] ?? order.type));
+  if (order.customerName) lines.push(text(`Cliente: ${order.customerName}`));
   if (order.deliveryAddress) {
-    for (const l of wrapText(`Dirección: ${order.deliveryAddress}`, WIDTH)) lines.push(l);
+    for (const l of wrapText(`Dirección: ${order.deliveryAddress}`, WRAP_WIDTH)) lines.push(text(l));
   }
   if (order.notes) {
     for (const raw of order.notes.split("\n")) {
-      for (const l of wrapText(raw, WIDTH)) lines.push(l);
+      for (const l of wrapText(raw, WRAP_WIDTH)) lines.push(text(l));
     }
   }
 
   lines.push(divider);
   for (const item of order.items) {
-    for (const l of itemRow(`${item.quantity}x ${item.productName}`, currency.format(item.unitPrice * item.quantity), WIDTH)) {
-      lines.push(l);
-    }
+    lines.push(
+      text(`${item.quantity}x ${item.productName}`, { right: currency.format(item.unitPrice * item.quantity) })
+    );
     if (item.flavorNames.length > 0) {
-      for (const l of wrapText(item.flavorNames.join(" + "), Math.max(WIDTH - 2, 1))) lines.push(`  ${l}`);
+      for (const l of wrapText(item.flavorNames.join(" + "), WRAP_WIDTH - 2)) lines.push(text(`  ${l}`));
     }
   }
 
   lines.push(divider);
-  for (const l of padRow("Subtotal", currency.format(order.subtotal), WIDTH)) lines.push(l);
-  if (order.discount > 0) {
-    for (const l of padRow("Descuento", `-${currency.format(order.discount)}`, WIDTH)) lines.push(l);
-  }
+  lines.push(text("Subtotal", { right: currency.format(order.subtotal) }));
+  if (order.discount > 0) lines.push(text("Descuento", { right: `-${currency.format(order.discount)}` }));
   if (order.total > order.subtotal - order.discount) {
-    for (const l of padRow("Envío", currency.format(order.total - order.subtotal + order.discount), WIDTH)) lines.push(l);
+    lines.push(text("Envío", { right: currency.format(order.total - order.subtotal + order.discount) }));
   }
-  for (const l of padRow("Total", currency.format(order.total), WIDTH)) lines.push(l);
+  lines.push(text("Total", { right: currency.format(order.total), big: true }));
   const paymentLabel = order.paymentMethod ? PAYMENT_METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod : "-";
-  for (const l of padRow("Pago", paymentLabel, WIDTH)) lines.push(l);
+  lines.push(text("Pago", { right: paymentLabel }));
 
   lines.push(divider);
   if (settings.ticketFooter) {
     for (const raw of settings.ticketFooter.split("\n")) {
-      for (const l of centeredLines(raw, WIDTH)) lines.push(l);
+      for (const l of wrapText(raw, WRAP_WIDTH)) lines.push(text(l, { align: "center" }));
     }
   }
 
-  return lines.join("\r\n") + "\r\n\f";
+  return lines;
 }
