@@ -1,4 +1,4 @@
-import { ORDER_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import { ORDER_CHANNEL, ORDER_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { currency, formatOrderNumber } from "@/lib/format";
 
 // Ancho usado solo para decidir DÓNDE cortar un texto largo en varias líneas (direcciones,
@@ -56,10 +56,10 @@ export type ComandaOrder = {
   items: { productName: string; quantity: number; unitPrice: number; flavorNames: string[] }[];
 };
 
-/** Mismo contenido que el ticket completo de Mostrador (logo aparte, lo agrega el script que
- *  imprime), con la etiqueta "AUTOSERVICIO" agregada para distinguirlo de un vistazo. Devuelve
- *  líneas con su alineación en vez de texto ya formateado, para que el centrado/alineado se
- *  haga con el ancho real de la impresora, no con una estimación de caracteres. */
+/** Mismo contenido para los dos canales (logo aparte, lo agrega el script que imprime), con
+ *  una etiqueta MOSTRADOR/AUTOSERVICIO para distinguirlos de un vistazo. Devuelve líneas con
+ *  su alineación en vez de texto ya formateado, para que el centrado/alineado se haga con el
+ *  ancho real de la impresora, no con una estimación de caracteres. */
 export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings): ComandaLine[] {
   const lines: ComandaLine[] = [];
 
@@ -72,8 +72,9 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
     }
   }
 
+  const channelLabel = order.channel === ORDER_CHANNEL.SELF_SERVICE ? "AUTOSERVICIO" : "MOSTRADOR";
   lines.push(divider);
-  lines.push(text("AUTOSERVICIO", { align: "center", big: true }));
+  lines.push(text(channelLabel, { align: "center", big: true }));
   const date = order.createdAt.toLocaleString("es-AR", {
     day: "2-digit",
     month: "2-digit",
