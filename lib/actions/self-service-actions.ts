@@ -11,7 +11,6 @@ import {
   NOTIFICATION_TYPE,
   SELF_SERVICE_DELIVERY_FEE,
 } from "@/lib/constants";
-import { deductStockForSale } from "@/lib/stock-deduction";
 import { formatOrderNumber } from "@/lib/format";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -92,7 +91,7 @@ export async function createSelfServiceOrder(
         number,
         channelNumber,
         type: data.type,
-        status: ORDER_STATUS.PREPARING,
+        status: ORDER_STATUS.RECEIVED,
         channel: ORDER_CHANNEL.SELF_SERVICE,
         customerId: customer.id,
         servedById: null,
@@ -123,11 +122,9 @@ export async function createSelfServiceOrder(
       data: { orderId: order.id, method: PAYMENT_METHOD.CASH, amount: total },
     });
 
-    await deductStockForSale(
-      tx,
-      data.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      formatOrderNumber(order.channel, order.channelNumber)
-    );
+    // El stock se descuenta recién cuando alguien del local pasa el pedido a "En
+    // preparación" (ver updateOrderStatus), no acá — así un pedido que nunca se confirma no
+    // llega a afectar el stock.
 
     const openRegister = await tx.cashRegister.findFirst({ where: { status: "OPEN" } });
     if (openRegister) {

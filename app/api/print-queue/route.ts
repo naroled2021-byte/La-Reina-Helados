@@ -33,7 +33,9 @@ export async function GET(req: NextRequest) {
         where: {
           channel,
           printedAt: null,
-          status: { not: ORDER_STATUS.CANCELLED },
+          // "Nuevos" (RECEIVED) todavía no lo confirmó nadie del local — recién se imprime
+          // cuando lo pasan a "En preparación" (o más adelante).
+          status: { notIn: [ORDER_STATUS.CANCELLED, ORDER_STATUS.RECEIVED] },
           createdAt: { gte: since },
         },
         include: {

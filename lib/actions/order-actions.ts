@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/auth-helpers";
 import { ORDER_STATUS, PAYMENT_METHOD } from "@/lib/constants";
+import { deductStockForSale } from "@/lib/stock-deduction";
+import { formatOrderNumber } from "@/lib/format";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -22,13 +24,29 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
     return { ok: false, error: "Estado inválido" };
   }
 
-  const order = await db.order.findUnique({ where: { id: orderId } });
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { items: true } });
   if (!order) return { ok: false, error: "Pedido no encontrado" };
   if (order.status === ORDER_STATUS.CANCELLED) {
     return { ok: false, error: "Este pedido está cancelado" };
   }
 
-  await db.order.update({ where: { id: orderId }, data: { status } });
+  // El stock de Autoservicio se descuenta recién acá, no al crear el pedido — así un pedido
+  // que queda en "Nuevos" sin confirmar nunca llega a afectar el stock. Mostrador/Ventas se
+  // crea directo en "En preparación" y ya descontó al crearse, así que esto nunca se dispara
+  // para esos (la condición exige que ANTES estuviera en "Nuevos").
+  const shouldDeductStock = status === ORDER_STATUS.PREPARING && order.status === ORDER_STATUS.RECEIVED;
+
+  await db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: orderId }, data: { status } });
+    if (shouldDeductStock) {
+      await deductStockForSale(
+        tx,
+        order.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        formatOrderNumber(order.channel, order.channelNumber),
+        session.user.id
+      );
+    }
+  });
 
   await db.auditLog.create({
     data: {

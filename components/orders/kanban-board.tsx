@@ -44,10 +44,27 @@ function toTicketData(order: KanbanOrder): TicketData {
   };
 }
 
-// Los pedidos entran directo en "En preparación" apenas se crean (sin pasar por Nuevos ni
-// Confirmados), para los dos canales por igual.
-const columns: { status: string; title: string; next: string | null; nextLabel: string | null; prev: string | null }[] = [
+type Column = { status: string; title: string; next: string | null; nextLabel: string | null; prev: string | null };
+
+// Mostrador/Ventas lo carga el propio local, así que el pedido entra directo en "En
+// preparación" (y ya descontó stock al crearse).
+const counterColumns: Column[] = [
   { status: ORDER_STATUS.PREPARING, title: "En preparación", next: ORDER_STATUS.DELIVERED, nextLabel: "Entregar", prev: null },
+  { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.PREPARING },
+];
+
+// Autoservicio llega solo, sin que nadie del local lo haya visto — por eso entra en
+// "Nuevos" primero. Recién cuando alguien lo pasa a "En preparación" se imprime el ticket
+// (vía el agente local) y se descuenta el stock (ver updateOrderStatus).
+const selfServiceColumns: Column[] = [
+  { status: ORDER_STATUS.RECEIVED, title: "Nuevos", next: ORDER_STATUS.PREPARING, nextLabel: "Preparar", prev: null },
+  {
+    status: ORDER_STATUS.PREPARING,
+    title: "En preparación",
+    next: ORDER_STATUS.DELIVERED,
+    nextLabel: "Entregar",
+    prev: ORDER_STATUS.RECEIVED,
+  },
   { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.PREPARING },
 ];
 
@@ -132,12 +149,14 @@ export function KanbanBoard({
         <OrderBoardRow
           title="Mostrador / Ventas"
           channel={ORDER_CHANNEL.COUNTER}
+          columns={counterColumns}
           orders={counterOrders}
           onManualPrint={handleManualPrint}
         />
         <OrderBoardRow
           title="Autoservicio"
           channel={ORDER_CHANNEL.SELF_SERVICE}
+          columns={selfServiceColumns}
           orders={selfServiceOrders}
           onManualPrint={handleManualPrint}
         />
@@ -148,14 +167,21 @@ export function KanbanBoard({
   );
 }
 
+const GRID_COLS_CLASS: Record<number, string> = {
+  2: "grid-cols-1 gap-4 sm:grid-cols-2",
+  3: "grid-cols-1 gap-4 sm:grid-cols-3",
+};
+
 function OrderBoardRow({
   title,
   channel,
+  columns,
   orders,
   onManualPrint,
 }: {
   title: string;
   channel: string;
+  columns: Column[];
   orders: KanbanOrder[];
   onManualPrint: (order: KanbanOrder) => void;
 }) {
@@ -167,7 +193,7 @@ function OrderBoardRow({
         <span className="size-2.5 rounded-full" style={{ backgroundColor: channelColor }} />
         {title}
       </h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className={`grid ${GRID_COLS_CLASS[columns.length] ?? GRID_COLS_CLASS[2]}`}>
         {columns.map((col) => {
           const columnOrders = orders.filter((o) => o.status === col.status);
           return (
