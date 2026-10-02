@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { ORDER_STATUS, ORDER_CHANNEL } from "@/lib/constants";
 import { buildComandaText } from "@/lib/comanda-text";
+import { getTicketSettings } from "@/lib/queries/settings";
 
 const CHANNEL_PARAM: Record<string, string> = {
   mostrador: ORDER_CHANNEL.COUNTER,
@@ -26,46 +27,65 @@ export async function GET(req: NextRequest) {
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const jobs = await db.$transaction(async (tx) => {
-    const pending = await tx.order.findMany({
-      where: {
-        channel,
-        printedAt: null,
-        status: { not: ORDER_STATUS.CANCELLED },
-        createdAt: { gte: since },
-      },
-      include: { items: { include: { product: true, flavors: { include: { flavor: true } } } }, customer: true },
-      orderBy: { createdAt: "asc" },
-      take: 10,
-    });
-
-    if (pending.length > 0) {
-      await tx.order.updateMany({
-        where: { id: { in: pending.map((o) => o.id) } },
-        data: { printedAt: new Date() },
+  const [jobsData, settings] = await Promise.all([
+    db.$transaction(async (tx) => {
+      const pending = await tx.order.findMany({
+        where: {
+          channel,
+          printedAt: null,
+          status: { not: ORDER_STATUS.CANCELLED },
+          createdAt: { gte: since },
+        },
+        include: {
+          items: { include: { product: true, flavors: { include: { flavor: true } } } },
+          customer: true,
+          payments: true,
+        },
+        orderBy: { createdAt: "asc" },
+        take: 10,
       });
-    }
 
-    return pending;
-  });
+      if (pending.length > 0) {
+        await tx.order.updateMany({
+          where: { id: { in: pending.map((o) => o.id) } },
+          data: { printedAt: new Date() },
+        });
+      }
 
-  const texts = jobs.map((o) =>
-    buildComandaText({
-      number: o.number,
-      channel: o.channel,
-      channelNumber: o.channelNumber,
-      createdAt: o.createdAt,
-      type: o.type,
-      customerName: o.customer?.name ?? null,
-      customerPhone: o.customer?.phone ?? null,
-      deliveryAddress: o.deliveryAddress,
-      notes: o.notes,
-      items: o.items.map((it) => ({
-        productName: it.product.name,
-        quantity: it.quantity,
-        flavorNames: it.flavors.map((f) => f.flavor.name),
-      })),
-    })
+      return pending;
+    }),
+    getTicketSettings(),
+  ]);
+
+  const texts = jobsData.map((o) =>
+    buildComandaText(
+      {
+        channel: o.channel,
+        channelNumber: o.channelNumber,
+        createdAt: o.createdAt,
+        type: o.type,
+        customerName: o.customer?.name ?? null,
+        deliveryAddress: o.deliveryAddress,
+        notes: o.notes,
+        subtotal: o.subtotal,
+        discount: o.discount,
+        total: o.total,
+        paymentMethod: o.payments[0]?.method ?? null,
+        items: o.items.map((it) => ({
+          productName: it.product.name,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          flavorNames: it.flavors.map((f) => f.flavor.name),
+        })),
+      },
+      {
+        businessName: settings.businessName,
+        address: settings.address,
+        phone: settings.phone,
+        ticketHeader: settings.ticketHeader,
+        ticketFooter: settings.ticketFooter,
+      }
+    )
   );
 
   return NextResponse.json({ jobs: texts });
