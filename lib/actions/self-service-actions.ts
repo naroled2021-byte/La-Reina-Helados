@@ -92,7 +92,7 @@ export async function createSelfServiceOrder(
         number,
         channelNumber,
         type: data.type,
-        status: ORDER_STATUS.RECEIVED,
+        status: ORDER_STATUS.PREPARING,
         channel: ORDER_CHANNEL.SELF_SERVICE,
         customerId: customer.id,
         servedById: null,

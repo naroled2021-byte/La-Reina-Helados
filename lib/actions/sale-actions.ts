@@ -55,7 +55,7 @@ export async function createSale(
         number,
         channelNumber,
         type: data.type,
-        status: ORDER_STATUS.RECEIVED,
+        status: ORDER_STATUS.PREPARING,
         channel: ORDER_CHANNEL.COUNTER,
         customerId: data.customerId || null,
         servedById: session.user.id,

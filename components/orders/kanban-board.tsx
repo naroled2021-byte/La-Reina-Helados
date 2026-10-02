@@ -44,72 +44,45 @@ function toTicketData(order: KanbanOrder): TicketData {
   };
 }
 
+// Los pedidos entran directo en "En preparación" apenas se crean (sin pasar por Nuevos ni
+// Confirmados), para los dos canales por igual.
 const columns: { status: string; title: string; next: string | null; nextLabel: string | null; prev: string | null }[] = [
-  // Los pedidos de Autoservicio llegan solos, sin que nadie del local los haya visto — por
-  // eso en esta columna, para ellos, el botón dice "Confirmar" (pasa a la columna
-  // Confirmados) en vez de "Preparar" directo. Los de Mostrador/Ventas los carga el propio
-  // local, así que siguen yendo directo a preparación como siempre (ver el render de abajo).
-  { status: ORDER_STATUS.RECEIVED, title: "Nuevos", next: ORDER_STATUS.PREPARING, nextLabel: "Preparar", prev: null },
-  {
-    status: ORDER_STATUS.CONFIRMED,
-    title: "Confirmados",
-    next: ORDER_STATUS.PREPARING,
-    nextLabel: "Preparar",
-    prev: ORDER_STATUS.RECEIVED,
-  },
-  {
-    status: ORDER_STATUS.PREPARING,
-    title: "En preparación",
-    next: ORDER_STATUS.DELIVERED,
-    nextLabel: "Entregar",
-    prev: ORDER_STATUS.RECEIVED,
-  },
+  { status: ORDER_STATUS.PREPARING, title: "En preparación", next: ORDER_STATUS.DELIVERED, nextLabel: "Entregar", prev: null },
   { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.PREPARING },
 ];
 
 export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[]; ticketSettings: TicketSettings }) {
   const router = useRouter();
-  // Antes solo guardaba qué IDs ya se habían visto; ahora guarda el último estado de cada
-  // uno, porque necesito detectar la TRANSICIÓN a Confirmado, no solo la llegada.
-  const knownStatuses = useRef<Map<string, string> | null>(null);
+  const knownIds = useRef<Set<string> | null>(null);
   const [printQueue, setPrintQueue] = useState<TicketData[]>([]);
   const printingRef = useRef(false);
 
   useEffect(() => {
-    const currentStatuses = new Map(orders.map((o) => [o.id, o.status]));
+    const currentIds = new Set(orders.map((o) => o.id));
     console.log("[pedidos-debug] poll tick, orders:", orders.map((o) => `#${o.number}(${o.status}/${o.channel})`));
 
-    if (knownStatuses.current) {
-      const prevStatuses = knownStatuses.current;
-      const newArrivals = orders.filter((o) => o.status === ORDER_STATUS.RECEIVED && !prevStatuses.has(o.id));
+    if (knownIds.current) {
+      const prevIds = knownIds.current;
+      const newArrivals = orders.filter((o) => !prevIds.has(o.id));
       console.log("[pedidos-debug] newArrivals:", newArrivals.map((o) => `#${o.number}`));
       for (const order of newArrivals) {
         toast.info(`Nuevo pedido #${formatOrderNumber(order.channel, order.channelNumber)}`);
       }
       if (newArrivals.length > 0) playNotificationSound();
 
-      // Mostrador/Ventas (COUNTER) imprimen apenas llegan, como siempre. Autoservicio
-      // (SELF_SERVICE) ya no imprime solo al llegar — recién cuando alguien lo confirma
-      // desde la columna Nuevos, para poder revisarlo antes de gastar el ticket.
-      const newCounterArrivals = newArrivals.filter((o) => o.channel !== ORDER_CHANNEL.SELF_SERVICE);
-      const justConfirmed = orders.filter(
-        (o) => o.status === ORDER_STATUS.CONFIRMED && prevStatuses.get(o.id) === ORDER_STATUS.RECEIVED
-      );
-      const toPrint = [...newCounterArrivals, ...justConfirmed];
-
       // Toda la impresión pasa por acá, sin importar desde qué pantalla o dispositivo se
       // haya cargado el pedido (Mostrador, Ventas, Autoservicio) — es la única forma de que
       // dispositivos sin impresora propia (como una tablet) terminen imprimiendo: el pedido
       // viaja hasta la PC que sí tiene la impresora y esta ventana lo imprime por ellos.
-      if (toPrint.length > 0) {
-        setPrintQueue((prev) => [...prev, ...toPrint.map(toTicketData)]);
-        console.log("[pedidos-debug] queued for print:", toPrint.map((o) => o.number));
+      if (newArrivals.length > 0) {
+        setPrintQueue((prev) => [...prev, ...newArrivals.map(toTicketData)]);
+        console.log("[pedidos-debug] queued for print:", newArrivals.map((o) => o.number));
       }
     } else {
       console.log("[pedidos-debug] first mount, marking all as known, none will print");
     }
 
-    knownStatuses.current = currentStatuses;
+    knownIds.current = currentIds;
   }, [orders]);
 
   function handleManualPrint(order: KanbanOrder) {
@@ -146,24 +119,11 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
 
   const counterOrders = orders.filter((o) => o.channel !== ORDER_CHANNEL.SELF_SERVICE);
   const selfServiceOrders = orders.filter((o) => o.channel === ORDER_CHANNEL.SELF_SERVICE);
-  // Confirmados solo existe para Autoservicio (ver comentario de "columns" arriba) — en la
-  // fila de Mostrador/Ventas esa columna siempre estaría vacía, así que no se muestra ahí.
-  const counterColumns = columns.filter((col) => col.status !== ORDER_STATUS.CONFIRMED);
 
   return (
     <div className="flex flex-col gap-8">
-      <OrderBoardRow
-        title="Mostrador / Ventas"
-        columns={counterColumns}
-        orders={counterOrders}
-        onManualPrint={handleManualPrint}
-      />
-      <OrderBoardRow
-        title="Autoservicio"
-        columns={columns}
-        orders={selfServiceOrders}
-        onManualPrint={handleManualPrint}
-      />
+      <OrderBoardRow title="Mostrador / Ventas" orders={counterOrders} onManualPrint={handleManualPrint} />
+      <OrderBoardRow title="Autoservicio" orders={selfServiceOrders} onManualPrint={handleManualPrint} />
 
       <TicketView ticket={printQueue[0] ?? null} settings={ticketSettings} onClose={() => {}} silent />
     </div>
@@ -172,20 +132,18 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
 
 function OrderBoardRow({
   title,
-  columns: rowColumns,
   orders,
   onManualPrint,
 }: {
   title: string;
-  columns: typeof columns;
   orders: KanbanOrder[];
   onManualPrint: (order: KanbanOrder) => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-base font-semibold">{title}</h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {rowColumns.map((col) => {
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {columns.map((col) => {
           const columnOrders = orders.filter((o) => o.status === col.status);
           return (
             <div key={col.status} className="flex flex-col gap-3 rounded-2xl bg-muted/40 p-3">
@@ -199,20 +157,16 @@ function OrderBoardRow({
                     Sin pedidos
                   </p>
                 ) : (
-                  columnOrders.map((order) => {
-                    const isSelfServiceNew =
-                      col.status === ORDER_STATUS.RECEIVED && order.channel === ORDER_CHANNEL.SELF_SERVICE;
-                    return (
-                      <OrderCard
-                        key={order.id}
-                        order={order}
-                        prevStatus={col.prev}
-                        nextStatus={isSelfServiceNew ? ORDER_STATUS.CONFIRMED : col.next}
-                        nextLabel={isSelfServiceNew ? "Confirmar" : col.nextLabel}
-                        onPrint={onManualPrint}
-                      />
-                    );
-                  })
+                  columnOrders.map((order) => (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      prevStatus={col.prev}
+                      nextStatus={col.next}
+                      nextLabel={col.nextLabel}
+                      onPrint={onManualPrint}
+                    />
+                  ))
                 )}
               </div>
             </div>
