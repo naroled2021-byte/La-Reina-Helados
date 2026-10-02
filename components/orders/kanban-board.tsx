@@ -122,8 +122,10 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
 
   return (
     <div className="flex flex-col gap-8">
-      <OrderBoardRow title="Mostrador / Ventas" orders={counterOrders} onManualPrint={handleManualPrint} />
-      <OrderBoardRow title="Autoservicio" orders={selfServiceOrders} onManualPrint={handleManualPrint} />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <OrderBoardRow title="Mostrador / Ventas" orders={counterOrders} onManualPrint={handleManualPrint} />
+        <OrderBoardRow title="Autoservicio" orders={selfServiceOrders} onManualPrint={handleManualPrint} />
+      </div>
 
       <TicketView ticket={printQueue[0] ?? null} settings={ticketSettings} onClose={() => {}} silent />
     </div>
