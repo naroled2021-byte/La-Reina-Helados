@@ -93,10 +93,14 @@ export function KanbanBoard({
       }
       if (newArrivals.length > 0) playNotificationSound();
 
-      // La impresión automática de los dos canales ya no pasa por acá: la manejan los
-      // agentes locales de impresión (/api/print-queue), uno por canal, que mandan cada
-      // ticket directo a su propia impresora por nombre. Esta ventana solo imprime cuando
-      // alguien aprieta "Imprimir pedido" a mano (ver handleManualPrint).
+      // Autoservicio ya no imprime desde acá: lo maneja el agente local de impresión
+      // (/api/print-queue), que manda esos tickets directo a su propia impresora por nombre.
+      // Esta ventana solo sigue imprimiendo, como antes, los de Mostrador/Ventas.
+      const toPrint = newArrivals.filter((o) => o.channel !== ORDER_CHANNEL.SELF_SERVICE);
+      if (toPrint.length > 0) {
+        setPrintQueue((prev) => [...prev, ...toPrint.map(toTicketData)]);
+        console.log("[pedidos-debug] queued for print:", toPrint.map((o) => o.number));
+      }
     } else {
       console.log("[pedidos-debug] first mount, marking all as known, none will print");
     }
