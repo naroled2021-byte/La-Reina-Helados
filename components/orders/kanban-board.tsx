@@ -51,7 +51,16 @@ const columns: { status: string; title: string; next: string | null; nextLabel: 
   { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.PREPARING },
 ];
 
-export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[]; ticketSettings: TicketSettings }) {
+export function KanbanBoard({
+  orders,
+  ticketSettings,
+  printChannel,
+}: {
+  orders: KanbanOrder[];
+  ticketSettings: TicketSettings;
+  /** Si viene, esta ventana solo imprime sola los pedidos de este canal (ver page.tsx). */
+  printChannel?: string;
+}) {
   const router = useRouter();
   const knownIds = useRef<Set<string> | null>(null);
   const [printQueue, setPrintQueue] = useState<TicketData[]>([]);
@@ -70,20 +79,21 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
       }
       if (newArrivals.length > 0) playNotificationSound();
 
-      // Toda la impresión pasa por acá, sin importar desde qué pantalla o dispositivo se
-      // haya cargado el pedido (Mostrador, Ventas, Autoservicio) — es la única forma de que
-      // dispositivos sin impresora propia (como una tablet) terminen imprimiendo: el pedido
-      // viaja hasta la PC que sí tiene la impresora y esta ventana lo imprime por ellos.
-      if (newArrivals.length > 0) {
-        setPrintQueue((prev) => [...prev, ...newArrivals.map(toTicketData)]);
-        console.log("[pedidos-debug] queued for print:", newArrivals.map((o) => o.number));
+      // Si esta ventana tiene un canal asignado (?canal=... en la URL, ver page.tsx), solo
+      // imprime sola los pedidos de ESE canal — así cada impresora física conectada a esta PC
+      // solo recibe lo suyo. Sin canal asignado, imprime todo lo que llega (comportamiento
+      // general, para una PC con una sola impresora compartida).
+      const toPrint = printChannel ? newArrivals.filter((o) => o.channel === printChannel) : newArrivals;
+      if (toPrint.length > 0) {
+        setPrintQueue((prev) => [...prev, ...toPrint.map(toTicketData)]);
+        console.log("[pedidos-debug] queued for print:", toPrint.map((o) => o.number));
       }
     } else {
       console.log("[pedidos-debug] first mount, marking all as known, none will print");
     }
 
     knownIds.current = currentIds;
-  }, [orders]);
+  }, [orders, printChannel]);
 
   function handleManualPrint(order: KanbanOrder) {
     setPrintQueue((prev) => [...prev, toTicketData(order)]);

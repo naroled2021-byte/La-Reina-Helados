@@ -2,9 +2,25 @@ import { requirePermission } from "@/lib/auth-helpers";
 import { getKanbanOrders } from "@/lib/queries/orders";
 import { getTicketSettings } from "@/lib/queries/settings";
 import { KanbanBoard } from "@/components/orders/kanban-board";
+import { ORDER_CHANNEL } from "@/lib/constants";
 
-export default async function PedidosPage() {
+// Las PCs que tienen una impresora física dedicada abren esta pantalla con ?canal=mostrador
+// o ?canal=autoservicio — así cada una solo imprime (silenciosamente, sin diálogo) los
+// pedidos de su propio canal, en su propia impresora predeterminada de Windows. Sin el
+// parámetro, la pantalla se usa igual pero no imprime sola (vista general / uso manual).
+const CANAL_PARAM_TO_CHANNEL: Record<string, string> = {
+  mostrador: ORDER_CHANNEL.COUNTER,
+  autoservicio: ORDER_CHANNEL.SELF_SERVICE,
+};
+
+export default async function PedidosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ canal?: string }>;
+}) {
   await requirePermission("orders.manage");
+  const { canal } = await searchParams;
+  const printChannel = canal ? CANAL_PARAM_TO_CHANNEL[canal] : undefined;
 
   const [orders, ticketSettings] = await Promise.all([getKanbanOrders(), getTicketSettings()]);
 
@@ -17,6 +33,7 @@ export default async function PedidosPage() {
 
       <KanbanBoard
         ticketSettings={ticketSettings}
+        printChannel={printChannel}
         orders={orders.map((o) => ({
           id: o.id,
           number: o.number,
