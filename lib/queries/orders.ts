@@ -25,6 +25,6 @@ export async function getKanbanOrders() {
       customer: true,
       payments: true,
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 }
