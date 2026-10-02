@@ -7,7 +7,7 @@ import { OrderCard } from "@/components/orders/order-card";
 import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
 import { logOrderReprint } from "@/lib/actions/order-actions";
 import { playNotificationSound } from "@/lib/notification-sound";
-import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import { ORDER_STATUS, ORDER_CHANNEL, ORDER_CHANNEL_COLOR, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { formatOrderNumber } from "@/lib/format";
 import type { KanbanOrder } from "@/components/orders/types";
 
@@ -123,8 +123,18 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
   return (
     <div className="flex flex-col gap-8">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <OrderBoardRow title="Mostrador / Ventas" orders={counterOrders} onManualPrint={handleManualPrint} />
-        <OrderBoardRow title="Autoservicio" orders={selfServiceOrders} onManualPrint={handleManualPrint} />
+        <OrderBoardRow
+          title="Mostrador / Ventas"
+          channel={ORDER_CHANNEL.COUNTER}
+          orders={counterOrders}
+          onManualPrint={handleManualPrint}
+        />
+        <OrderBoardRow
+          title="Autoservicio"
+          channel={ORDER_CHANNEL.SELF_SERVICE}
+          orders={selfServiceOrders}
+          onManualPrint={handleManualPrint}
+        />
       </div>
 
       <TicketView ticket={printQueue[0] ?? null} settings={ticketSettings} onClose={() => {}} silent />
@@ -134,16 +144,23 @@ export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[];
 
 function OrderBoardRow({
   title,
+  channel,
   orders,
   onManualPrint,
 }: {
   title: string;
+  channel: string;
   orders: KanbanOrder[];
   onManualPrint: (order: KanbanOrder) => void;
 }) {
+  const channelColor = ORDER_CHANNEL_COLOR[channel] ?? ORDER_CHANNEL_COLOR.COUNTER;
+
   return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-base font-semibold">{title}</h2>
+    <div className="flex flex-col gap-3 rounded-2xl border-t-4 p-3" style={{ borderTopColor: channelColor }}>
+      <h2 className="flex items-center gap-2 text-base font-semibold">
+        <span className="size-2.5 rounded-full" style={{ backgroundColor: channelColor }} />
+        {title}
+      </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {columns.map((col) => {
           const columnOrders = orders.filter((o) => o.status === col.status);

@@ -16,7 +16,14 @@ import {
 import { updateOrderStatus, updateOrderPaymentMethod } from "@/lib/actions/order-actions";
 import { cancelSale } from "@/lib/actions/sale-actions";
 import { currency, formatOrderNumber } from "@/lib/format";
-import { ORDER_TYPE_LABEL, ORDER_CHANNEL, PAYMENT_METHOD, PAYMENT_METHOD_LABEL } from "@/lib/constants";
+import {
+  ORDER_TYPE_LABEL,
+  ORDER_CHANNEL,
+  ORDER_CHANNEL_LABEL,
+  ORDER_CHANNEL_COLOR,
+  PAYMENT_METHOD,
+  PAYMENT_METHOD_LABEL,
+} from "@/lib/constants";
 import type { KanbanOrder } from "@/components/orders/types";
 
 const typeIcon = { DINE_IN: Store, TAKEAWAY: MapPin, DELIVERY: Truck } as const;
@@ -38,6 +45,7 @@ export function OrderCard({
   const [isPending, startTransition] = useTransition();
   const TypeIcon = typeIcon[order.type as keyof typeof typeIcon] ?? Store;
   const displayNumber = formatOrderNumber(order.channel, order.channelNumber);
+  const channelColor = ORDER_CHANNEL_COLOR[order.channel] ?? ORDER_CHANNEL_COLOR.COUNTER;
 
   function move(status: string) {
     startTransition(async () => {
@@ -75,7 +83,10 @@ export function OrderCard({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border bg-card p-3 shadow-sm">
+    <div
+      className="flex flex-col gap-2 rounded-2xl border border-l-4 bg-card p-3 shadow-sm"
+      style={{ borderLeftColor: channelColor }}
+    >
       <div className="flex items-center justify-between">
         <span className="font-medium">#{displayNumber}</span>
         <span className="text-xs text-muted-foreground">
@@ -84,16 +95,22 @@ export function OrderCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
+        <Badge
+          variant="outline"
+          className="gap-1 border-none text-[10px]"
+          style={{ backgroundColor: `${channelColor}1a`, color: channelColor }}
+        >
+          {order.channel === ORDER_CHANNEL.SELF_SERVICE ? (
+            <MonitorSmartphone className="size-3" />
+          ) : (
+            <Store className="size-3" />
+          )}
+          {ORDER_CHANNEL_LABEL[order.channel] ?? order.channel}
+        </Badge>
         <Badge variant="secondary" className="gap-1 text-[10px]">
           <TypeIcon className="size-3" />
           {ORDER_TYPE_LABEL[order.type] ?? order.type}
         </Badge>
-        {order.channel === ORDER_CHANNEL.SELF_SERVICE && (
-          <Badge variant="outline" className="gap-1 text-[10px]">
-            <MonitorSmartphone className="size-3" />
-            Autoservicio
-          </Badge>
-        )}
         {order.tableNumber && <span className="text-xs text-muted-foreground">Mesa {order.tableNumber}</span>}
       </div>
 

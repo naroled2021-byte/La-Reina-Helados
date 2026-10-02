@@ -58,6 +58,17 @@ export const ORDER_CHANNEL = {
   SELF_SERVICE: "SELF_SERVICE",
 } as const;
 
+export const ORDER_CHANNEL_LABEL: Record<string, string> = {
+  COUNTER: "Mostrador / Ventas",
+  SELF_SERVICE: "Autoservicio",
+};
+
+// Azul y naranja: fácil de distinguir de un vistazo y entre sí (incluso para daltonismo).
+export const ORDER_CHANNEL_COLOR: Record<string, string> = {
+  COUNTER: "#2563EB",
+  SELF_SERVICE: "#F97316",
+};
+
 export const PAYMENT_METHOD = {
   CASH: "CASH",
   CARD: "CARD",
