@@ -88,5 +88,7 @@ export async function GET(req: NextRequest) {
     )
   );
 
-  return NextResponse.json({ jobs: texts });
+  // Charset explícito: sin esto, Windows PowerShell 5.1 (Invoke-RestMethod) a veces adivina
+  // mal la codificación de la respuesta y las tildes/ñ salen con caracteres rotos (Ã³, Ã±...).
+  return NextResponse.json({ jobs: texts }, { headers: { "Content-Type": "application/json; charset=utf-8" } });
 }
