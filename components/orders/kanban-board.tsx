@@ -60,18 +60,11 @@ const columns: { status: string; title: string; next: string | null; nextLabel: 
   {
     status: ORDER_STATUS.PREPARING,
     title: "En preparación",
-    next: ORDER_STATUS.READY,
-    nextLabel: "Listo",
-    prev: ORDER_STATUS.RECEIVED,
-  },
-  {
-    status: ORDER_STATUS.READY,
-    title: "Listos",
     next: ORDER_STATUS.DELIVERED,
     nextLabel: "Entregar",
-    prev: ORDER_STATUS.PREPARING,
+    prev: ORDER_STATUS.RECEIVED,
   },
-  { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.READY },
+  { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.PREPARING },
 ];
 
 export function KanbanBoard({ orders, ticketSettings }: { orders: KanbanOrder[]; ticketSettings: TicketSettings }) {
