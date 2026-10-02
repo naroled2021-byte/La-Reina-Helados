@@ -37,8 +37,12 @@ export type TicketSettings = {
   copies: number;
 };
 
-const CHAR_WIDTH: Record<string, number> = { "58mm": 19, "80mm": 28 };
-const PRINT_WIDTH_MM: Record<string, string> = { "58mm": "38mm", "80mm": "58mm" };
+// Antes usaban solo ~38mm/58mm de ancho real (quedaba un margen enorme sin usar a los
+// costados). Ahora ocupan casi todo el papel (el resto lo come el margin de @page de abajo),
+// manteniendo el mismo tamaño de letra: misma proporción mm-por-carácter que antes, solo con
+// más caracteres por línea para aprovechar el ancho real.
+const CHAR_WIDTH: Record<string, number> = { "58mm": 27, "80mm": 36 };
+const PRINT_WIDTH_MM: Record<string, string> = { "58mm": "54mm", "80mm": "76mm" };
 // Margen entre una copia y la siguiente — una impresora lenta puede descartar el segundo
 // trabajo si se lo mandamos muy pegado al primero.
 const COPY_GAP_MS = 3500;
