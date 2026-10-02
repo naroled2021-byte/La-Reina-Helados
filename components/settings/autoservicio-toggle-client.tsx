@@ -3,16 +3,27 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Power, ShoppingBag } from "lucide-react";
+import { Loader2, Power, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { toggleAutoservicioEnabled } from "@/lib/actions/settings-actions";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toggleAutoservicioEnabled, updateAutoservicioWaitMinutes } from "@/lib/actions/settings-actions";
 import { cn } from "@/lib/utils";
 
-export function AutoservicioToggleClient({ initialEnabled }: { initialEnabled: boolean }) {
+export function AutoservicioToggleClient({
+  initialEnabled,
+  initialWaitMinutes,
+}: {
+  initialEnabled: boolean;
+  initialWaitMinutes: number;
+}) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(initialEnabled);
   const [isPending, startTransition] = useTransition();
+
+  const [waitMinutes, setWaitMinutes] = useState(String(initialWaitMinutes));
+  const [isSavingWait, startSavingWait] = useTransition();
 
   function handleToggle() {
     const next = !enabled;
@@ -24,6 +35,18 @@ export function AutoservicioToggleClient({ initialEnabled }: { initialEnabled: b
       }
       setEnabled(next);
       toast.success(next ? "Autoservicio activado" : "Autoservicio desactivado");
+      router.refresh();
+    });
+  }
+
+  function handleSaveWaitMinutes() {
+    startSavingWait(async () => {
+      const res = await updateAutoservicioWaitMinutes({ waitMinutes: waitMinutes as never });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Demora estimada actualizada");
       router.refresh();
     });
   }
@@ -57,6 +80,28 @@ export function AutoservicioToggleClient({ initialEnabled }: { initialEnabled: b
           <Power className="size-4" />
           {enabled ? "Desactivar Autoservicio" : "Activar Autoservicio"}
         </Button>
+
+        <div className="mt-2 flex w-full flex-col gap-1.5 border-t pt-4 text-left">
+          <Label htmlFor="waitMinutes">Demora estimada (minutos)</Label>
+          <p className="text-xs text-muted-foreground">
+            Se muestra a los clientes cuando hacen un pedido. Dejalo en 0 para no mostrar ningún tiempo.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              id="waitMinutes"
+              type="number"
+              min={0}
+              max={180}
+              value={waitMinutes}
+              onChange={(e) => setWaitMinutes(e.target.value)}
+              placeholder="Ej: 15"
+            />
+            <Button variant="outline" disabled={isSavingWait} onClick={handleSaveWaitMinutes}>
+              {isSavingWait && <Loader2 className="size-4 animate-spin" />}
+              Guardar
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

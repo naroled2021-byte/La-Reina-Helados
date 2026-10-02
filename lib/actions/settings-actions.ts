@@ -8,10 +8,12 @@ import {
   themeSettingsSchema,
   printSettingsSchema,
   autoservicioSettingsSchema,
+  autoservicioWaitMinutesSchema,
   type GeneralSettingsInput,
   type ThemeSettingsInput,
   type PrintSettingsInput,
   type AutoservicioSettingsInput,
+  type AutoservicioWaitMinutesInput,
 } from "@/lib/validations/settings";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -128,6 +130,31 @@ export async function toggleAutoservicioEnabled(enabled: boolean): Promise<Actio
       action: "settings.toggle_autoservicio",
       entity: "Setting",
       metadata: JSON.stringify({ enabled }),
+    },
+  });
+
+  revalidatePath("/admin/configuracion");
+  revalidatePath("/autoservicio");
+  revalidatePath("/admin/desactivar-autoservicio");
+  return { ok: true, data: undefined };
+}
+
+// Mismo criterio que toggleAutoservicioEnabled: cualquier empleado logueado puede ajustar
+// la demora desde la página rápida, no hace falta el permiso settings.manage.
+export async function updateAutoservicioWaitMinutes(input: AutoservicioWaitMinutesInput): Promise<ActionResult> {
+  const session = await requireSession();
+  const parsed = autoservicioWaitMinutesSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const d = parsed.data;
+
+  await upsertSettings([["autoservicio.waitMinutes", String(d.waitMinutes), "autoservicio"]]);
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "settings.update_autoservicio_wait",
+      entity: "Setting",
+      metadata: JSON.stringify({ waitMinutes: d.waitMinutes }),
     },
   });
 
