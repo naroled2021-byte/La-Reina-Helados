@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Ban, MapPin, MonitorSmartphone, Printer, Store, 
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -114,17 +115,35 @@ export function OrderCard({
         {order.tableNumber && <span className="text-xs text-muted-foreground">Mesa {order.tableNumber}</span>}
       </div>
 
-      <p className="line-clamp-2 text-xs text-muted-foreground">{order.itemsSummary}</p>
-      {order.customerName && (
-        <p className="text-xs font-medium">
-          {order.customerName}
-          {order.customerPhone && <span className="font-normal text-muted-foreground"> · {order.customerPhone}</span>}
-        </p>
-      )}
-      {order.deliveryAddress && (
-        <p className="truncate text-xs text-muted-foreground">{order.deliveryAddress}</p>
-      )}
-      {order.notes && <p className="whitespace-pre-line text-xs font-medium text-amber-700">{order.notes}</p>}
+      <Tooltip>
+        <TooltipTrigger render={<div className="flex flex-col gap-1 text-left" />}>
+          <p className="line-clamp-2 text-xs text-muted-foreground">{order.itemsSummary}</p>
+          {order.customerName && (
+            <p className="text-xs font-medium">
+              {order.customerName}
+              {order.customerPhone && (
+                <span className="font-normal text-muted-foreground"> · {order.customerPhone}</span>
+              )}
+            </p>
+          )}
+          {order.deliveryAddress && (
+            <p className="truncate text-xs text-muted-foreground">{order.deliveryAddress}</p>
+          )}
+          {order.notes && <p className="whitespace-pre-line text-xs font-medium text-amber-700">{order.notes}</p>}
+        </TooltipTrigger>
+        <TooltipContent side="right" className="max-w-xs whitespace-pre-line text-left">
+          {[
+            order.itemsSummary,
+            order.customerName
+              ? `${order.customerName}${order.customerPhone ? ` · ${order.customerPhone}` : ""}`
+              : null,
+            order.deliveryAddress,
+            order.notes,
+          ]
+            .filter(Boolean)
+            .join("\n")}
+        </TooltipContent>
+      </Tooltip>
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold tabular-nums">{currency.format(order.total)}</p>
