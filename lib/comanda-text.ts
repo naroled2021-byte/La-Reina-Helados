@@ -86,13 +86,17 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
   if (order.deliveryAddress) {
     for (const l of wrapText(`Dirección: ${order.deliveryAddress}`, WRAP_WIDTH)) lines.push(text(l));
   }
+  // La línea de "Paga con $X (vuelto $Y)" se separa del resto de las notas para mostrarla
+  // grande después del Total (ver más abajo) — es la plata que tiene que tener lista quien
+  // entrega, así que conviene que quede pegada al total, no arriba con los demás datos.
+  let paymentNoteLine: string | null = null;
   if (order.notes) {
     for (const raw of order.notes.split("\n")) {
-      // La línea de "Paga con $X (vuelto $Y)" es la plata que tiene que tener lista quien
-      // entrega — se destaca grande para que se vea de un vistazo, el resto (observaciones)
-      // queda en tamaño normal.
-      const isPaymentLine = raw.startsWith("Paga con");
-      for (const l of wrapText(raw, isPaymentLine ? WRAP_WIDTH - 8 : WRAP_WIDTH)) lines.push(text(l, { big: isPaymentLine }));
+      if (raw.startsWith("Paga con")) {
+        paymentNoteLine = raw;
+        continue;
+      }
+      for (const l of wrapText(raw, WRAP_WIDTH)) lines.push(text(l));
     }
   }
 
@@ -115,6 +119,10 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
   lines.push(text("Total", { right: currency.format(order.total), big: true }));
   const paymentLabel = order.paymentMethod ? PAYMENT_METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod : "-";
   lines.push(text("Pago", { right: paymentLabel }));
+
+  if (paymentNoteLine) {
+    for (const l of wrapText(paymentNoteLine, WRAP_WIDTH - 8)) lines.push(text(l, { big: true }));
+  }
 
   lines.push(divider);
   if (settings.ticketFooter) {
