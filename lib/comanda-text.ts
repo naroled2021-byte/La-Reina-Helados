@@ -80,7 +80,10 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
     hour: "2-digit",
     minute: "2-digit",
   });
-  lines.push(text(`Pedido #${formatOrderNumber(order.channel, order.channelNumber)}`, { right: date, big: true }));
+  // "Pedido #" en su propia línea grande: si va junto con la hora en la misma línea (las
+  // dos en letra grande) no entran y se pisan en papel angosto.
+  lines.push(text(`Pedido #${formatOrderNumber(order.channel, order.channelNumber)}`, { big: true }));
+  lines.push(text(date));
   lines.push(text(ORDER_TYPE_LABEL[order.type] ?? order.type));
   if (order.customerName) lines.push(text(`Cliente: ${order.customerName}`));
   if (order.deliveryAddress) {
