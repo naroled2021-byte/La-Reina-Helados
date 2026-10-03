@@ -80,7 +80,7 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
     hour: "2-digit",
     minute: "2-digit",
   });
-  lines.push(text(`Pedido #${formatOrderNumber(order.channel, order.channelNumber)}`, { right: date }));
+  lines.push(text(`Pedido #${formatOrderNumber(order.channel, order.channelNumber)}`, { right: date, big: true }));
   lines.push(text(ORDER_TYPE_LABEL[order.type] ?? order.type));
   if (order.customerName) lines.push(text(`Cliente: ${order.customerName}`));
   if (order.deliveryAddress) {
@@ -88,7 +88,11 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
   }
   if (order.notes) {
     for (const raw of order.notes.split("\n")) {
-      for (const l of wrapText(raw, WRAP_WIDTH)) lines.push(text(l));
+      // La línea de "Paga con $X (vuelto $Y)" es la plata que tiene que tener lista quien
+      // entrega — se destaca grande para que se vea de un vistazo, el resto (observaciones)
+      // queda en tamaño normal.
+      const isPaymentLine = raw.startsWith("Paga con");
+      for (const l of wrapText(raw, isPaymentLine ? WRAP_WIDTH - 8 : WRAP_WIDTH)) lines.push(text(l, { big: isPaymentLine }));
     }
   }
 
