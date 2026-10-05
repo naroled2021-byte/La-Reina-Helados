@@ -151,6 +151,10 @@ model InventoryMovement {
   reason          String?
   userId          String?
   user            User?    @relation(fields: [userId], references: [id])
+  // Pedido que originó el descuento (ventas) — permite devolver el stock automáticamente
+  // si el pedido se cancela después (ver cancelSale).
+  orderId         String?
+  order           Order?   @relation(fields: [orderId], references: [id])
   createdAt       DateTime @default(now())
 }
 
@@ -244,9 +248,10 @@ model Order {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  items    OrderItem[]
-  payments Payment[]
-  cashMovements CashMovement[]
+  items             OrderItem[]
+  payments          Payment[]
+  cashMovements     CashMovement[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([channel, channelNumber])
 }

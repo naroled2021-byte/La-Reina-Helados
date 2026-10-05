@@ -11,6 +11,7 @@ export async function deductStockForSale(
   tx: TxClient,
   items: { productId: string; quantity: number }[],
   orderDisplayNumber: string,
+  orderId: string,
   userId: string | null = null
 ) {
   const productIds = [...new Set(items.map((i) => i.productId))];
@@ -47,6 +48,7 @@ export async function deductStockForSale(
             quantity: consumed,
             reason: `Venta pedido #${orderDisplayNumber}`,
             userId,
+            orderId,
           },
         });
       }

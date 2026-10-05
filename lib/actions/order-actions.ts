@@ -43,6 +43,7 @@ export async function updateOrderStatus(orderId: string, status: string): Promis
         tx,
         order.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         formatOrderNumber(order.channel, order.channelNumber),
+        order.id,
         session.user.id
       );
     }

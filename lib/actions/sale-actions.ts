@@ -11,6 +11,7 @@ import {
   CASH_MOVEMENT_TYPE,
   NOTIFICATION_TYPE,
   SELF_SERVICE_DELIVERY_FEE,
+  INVENTORY_MOVEMENT_TYPE,
 } from "@/lib/constants";
 import { deductStockForSale } from "@/lib/stock-deduction";
 import { formatOrderNumber } from "@/lib/format";
@@ -90,6 +91,7 @@ export async function createSale(
       tx,
       data.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       formatOrderNumber(order.channel, order.channelNumber),
+      order.id,
       session.user.id
     );
 
@@ -164,10 +166,33 @@ export async function cancelSale(orderId: string): Promise<ActionResult> {
   if (!order) return { ok: false, error: "Venta no encontrada" };
   if (order.status === ORDER_STATUS.CANCELLED) return { ok: true, data: undefined };
 
-  await db.$transaction([
-    db.order.update({ where: { id: orderId }, data: { status: ORDER_STATUS.CANCELLED } }),
-    db.cashMovement.deleteMany({ where: { orderId } }),
-  ]);
+  await db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: orderId }, data: { status: ORDER_STATUS.CANCELLED } });
+    await tx.cashMovement.deleteMany({ where: { orderId } });
+
+    // Si el pedido ya había descontado stock (venta de Mostrador, o Autoservicio ya pasado
+    // a "En preparación"), devolverlo — si no, no hay nada que devolver (todavía no se
+    // había descontado, por ejemplo si estaba en "Nuevos").
+    const saleMovements = await tx.inventoryMovement.findMany({
+      where: { orderId, type: INVENTORY_MOVEMENT_TYPE.SALE },
+    });
+    for (const m of saleMovements) {
+      await tx.inventoryItem.update({
+        where: { id: m.inventoryItemId },
+        data: { currentStock: { increment: m.quantity } },
+      });
+      await tx.inventoryMovement.create({
+        data: {
+          inventoryItemId: m.inventoryItemId,
+          type: INVENTORY_MOVEMENT_TYPE.ADJUSTMENT,
+          quantity: m.quantity,
+          reason: `Devolución por cancelación de pedido #${formatOrderNumber(order.channel, order.channelNumber)}`,
+          userId: session.user.id,
+          orderId,
+        },
+      });
+    }
+  });
 
   await db.auditLog.create({
     data: {
