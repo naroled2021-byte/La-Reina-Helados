@@ -6,22 +6,39 @@ import { SalesByDayChart } from "@/components/dashboard/sales-by-day-chart";
 import { ReportTable } from "@/components/reports/report-table";
 import { ExportButtons } from "@/components/reports/export-buttons";
 import { useReportData } from "@/components/reports/use-report-data";
-import { fetchSalesReport } from "@/lib/actions/report-actions";
+import { fetchSalesReport, fetchCancelledOrdersReport } from "@/lib/actions/report-actions";
 import { currency } from "@/lib/format";
 import { ORDER_TYPE_LABEL, ORDER_STATUS_LABEL } from "@/lib/constants";
 import type { DateRange } from "@/lib/date-range";
 
-export function SalesReportTab({ range }: { range: DateRange }) {
-  const { data, loading } = useReportData(fetchSalesReport, [range]);
+/** Reportes de Ventas y de Pedidos cancelados, separados por canal (Mostrador/Ventas vs
+ *  Autoservicio) — mismo detalle en los dos, solo cambia de qué pedidos se trata. */
+export function OrdersReportTab({
+  range,
+  channel,
+  cancelled,
+}: {
+  range: DateRange;
+  channel: string;
+  cancelled: boolean;
+}) {
+  const fetcher = cancelled ? fetchCancelledOrdersReport : fetchSalesReport;
+  const { data, loading } = useReportData(fetcher, [range, channel]);
 
   if (loading || !data) return <p className="text-sm text-muted-foreground">Cargando...</p>;
+
+  const totalLabel = cancelled ? "Total cancelado" : "Ventas totales";
+  const countLabel = cancelled ? "Pedidos cancelados" : "Pedidos";
+  const avgLabel = cancelled ? "Promedio cancelado" : "Ticket promedio";
+  const filenamePrefix = cancelled ? "pedidos-cancelados" : "ventas";
+  const channelSlug = channel === "SELF_SERVICE" ? "autoservicio" : "mostrador";
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <KpiCard label="Ventas totales" value={currency.format(data.total)} icon={DollarSign} />
-        <KpiCard label="Pedidos" value={String(data.count)} icon={ClipboardList} />
-        <KpiCard label="Ticket promedio" value={currency.format(data.avgTicket)} icon={Receipt} />
+        <KpiCard label={totalLabel} value={currency.format(data.total)} icon={DollarSign} />
+        <KpiCard label={countLabel} value={String(data.count)} icon={ClipboardList} />
+        <KpiCard label={avgLabel} value={currency.format(data.avgTicket)} icon={Receipt} />
       </div>
 
       {data.daily.length > 1 && (
@@ -36,7 +53,7 @@ export function SalesReportTab({ range }: { range: DateRange }) {
       )}
 
       <ExportButtons
-        filename="ventas"
+        filename={`${filenamePrefix}-${channelSlug}`}
         columns={[
           { key: "number", label: "Pedido" },
           { key: "date", label: "Fecha" },

@@ -40,7 +40,3 @@ export async function exportToExcel(filename: string, columns: ExportColumn[], r
   });
   downloadBlob(blob, `${filename}.xlsx`);
 }
-
-export function printReport() {
-  window.print();
-}

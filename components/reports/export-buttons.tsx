@@ -1,9 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
-import { Download, FileSpreadsheet, Printer } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { exportToCsv, exportToExcel, printReport, type ExportColumn } from "@/lib/report-export";
+import { exportToCsv, exportToExcel, type ExportColumn } from "@/lib/report-export";
 
 export function ExportButtons({
   filename,
@@ -31,10 +31,6 @@ export function ExportButtons({
       >
         <FileSpreadsheet className="size-3.5" />
         Excel
-      </Button>
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={printReport}>
-        <Printer className="size-3.5" />
-        PDF
       </Button>
     </div>
   );

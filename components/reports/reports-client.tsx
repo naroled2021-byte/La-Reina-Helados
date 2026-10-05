@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DateRangeFilter } from "@/components/reports/date-range-filter";
-import { SalesReportTab } from "@/components/reports/sales-report-tab";
+import { OrdersReportTab } from "@/components/reports/orders-report-tab";
 import { ProductsReportTab } from "@/components/reports/products-report-tab";
 import { FlavorsReportTab } from "@/components/reports/flavors-report-tab";
 import { CustomersReportTab } from "@/components/reports/customers-report-tab";
@@ -14,12 +14,13 @@ import { PaymentMethodsReportTab } from "@/components/reports/payment-methods-re
 import { ProfitReportTab } from "@/components/reports/profit-report-tab";
 import { PromotionsReportTab } from "@/components/reports/promotions-report-tab";
 import { getRangeForPreset } from "@/lib/date-range";
+import { ORDER_CHANNEL } from "@/lib/constants";
 import type { DateRange } from "@/lib/date-range";
 
 const tabsWithoutRange = new Set(["stock", "promotions"]);
 
 export function ReportsClient() {
-  const [tab, setTab] = useState("sales");
+  const [tab, setTab] = useState("sales-counter");
   const [range, setRange] = useState<DateRange>(() => getRangeForPreset("today"));
 
   return (
@@ -27,7 +28,10 @@ export function ReportsClient() {
       <div className="flex flex-col gap-4">
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <TabsList className="w-max">
-          <TabsTrigger value="sales">Ventas</TabsTrigger>
+          <TabsTrigger value="sales-counter">Ventas Mostrador</TabsTrigger>
+          <TabsTrigger value="sales-self">Ventas Autoservicio</TabsTrigger>
+          <TabsTrigger value="cancelled-counter">Cancelados Mostrador</TabsTrigger>
+          <TabsTrigger value="cancelled-self">Cancelados Autoservicio</TabsTrigger>
           <TabsTrigger value="products">Productos</TabsTrigger>
           <TabsTrigger value="flavors">Sabores</TabsTrigger>
           <TabsTrigger value="customers">Clientes</TabsTrigger>
@@ -44,8 +48,17 @@ export function ReportsClient() {
       </div>
 
       <div className="pt-4">
-        <TabsContent value="sales">
-          <SalesReportTab range={range} />
+        <TabsContent value="sales-counter">
+          <OrdersReportTab range={range} channel={ORDER_CHANNEL.COUNTER} cancelled={false} />
+        </TabsContent>
+        <TabsContent value="sales-self">
+          <OrdersReportTab range={range} channel={ORDER_CHANNEL.SELF_SERVICE} cancelled={false} />
+        </TabsContent>
+        <TabsContent value="cancelled-counter">
+          <OrdersReportTab range={range} channel={ORDER_CHANNEL.COUNTER} cancelled={true} />
+        </TabsContent>
+        <TabsContent value="cancelled-self">
+          <OrdersReportTab range={range} channel={ORDER_CHANNEL.SELF_SERVICE} cancelled={true} />
         </TabsContent>
         <TabsContent value="products">
           <ProductsReportTab range={range} />

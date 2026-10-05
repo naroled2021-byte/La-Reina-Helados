@@ -5,9 +5,21 @@ import type { DateRange } from "@/lib/date-range";
 
 const notCancelled = { not: ORDER_STATUS.CANCELLED };
 
-export async function getSalesReport({ from, to }: DateRange) {
+/** Compartida por los reportes de Ventas y de Pedidos cancelados: misma forma de datos
+ *  (KPIs + serie diaria + filas con detalle), separados por canal y por si son los
+ *  pedidos cancelados o los que sí se concretaron. */
+async function getOrdersReport({
+  from,
+  to,
+  channel,
+  cancelledOnly,
+}: DateRange & { channel: string; cancelledOnly: boolean }) {
   const orders = await db.order.findMany({
-    where: { createdAt: { gte: from, lte: to }, status: notCancelled },
+    where: {
+      createdAt: { gte: from, lte: to },
+      channel,
+      status: cancelledOnly ? ORDER_STATUS.CANCELLED : notCancelled,
+    },
     include: { customer: true },
     orderBy: { createdAt: "desc" },
   });
@@ -39,6 +51,14 @@ export async function getSalesReport({ from, to }: DateRange) {
       total: o.total,
     })),
   };
+}
+
+export async function getSalesReport({ from, to, channel }: DateRange & { channel: string }) {
+  return getOrdersReport({ from, to, channel, cancelledOnly: false });
+}
+
+export async function getCancelledOrdersReport({ from, to, channel }: DateRange & { channel: string }) {
+  return getOrdersReport({ from, to, channel, cancelledOnly: true });
 }
 
 export async function getProductsReport({ from, to }: DateRange) {
