@@ -28,3 +28,16 @@ export async function getKanbanOrders() {
     orderBy: { createdAt: "desc" },
   });
 }
+
+/** Detalle completo de un pedido puntual — lo usan los reportes para mostrar qué tenía un
+ *  pedido (items, sabores, cliente, dirección) al hacer click en una fila. */
+export async function getOrderDetail(orderId: string) {
+  return db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: { include: { product: true, flavors: { include: { flavor: true } } } },
+      customer: true,
+      payments: true,
+    },
+  });
+}

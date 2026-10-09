@@ -3,6 +3,7 @@
 import { requirePermission } from "@/lib/auth-helpers";
 import type { DateRange } from "@/lib/date-range";
 import * as reports from "@/lib/queries/reports";
+import { getOrderDetail } from "@/lib/queries/orders";
 
 export async function fetchSalesReport(range: DateRange, channel: string) {
   await requirePermission("reports.view");
@@ -12,6 +13,11 @@ export async function fetchSalesReport(range: DateRange, channel: string) {
 export async function fetchCancelledOrdersReport(range: DateRange, channel: string) {
   await requirePermission("reports.view");
   return reports.getCancelledOrdersReport({ ...range, channel });
+}
+
+export async function fetchOrderDetail(orderId: string) {
+  await requirePermission("reports.view");
+  return getOrderDetail(orderId);
 }
 
 export async function fetchProductsReport(range: DateRange) {

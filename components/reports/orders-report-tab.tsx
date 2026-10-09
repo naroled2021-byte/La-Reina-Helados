@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { DollarSign, ClipboardList, Receipt } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { SalesByDayChart } from "@/components/dashboard/sales-by-day-chart";
 import { ReportTable } from "@/components/reports/report-table";
 import { ExportButtons } from "@/components/reports/export-buttons";
+import { OrderDetailDialog } from "@/components/reports/order-detail-dialog";
 import { useReportData } from "@/components/reports/use-report-data";
 import { fetchSalesReport, fetchCancelledOrdersReport } from "@/lib/actions/report-actions";
 import { currency } from "@/lib/format";
@@ -24,6 +26,7 @@ export function OrdersReportTab({
 }) {
   const fetcher = cancelled ? fetchCancelledOrdersReport : fetchSalesReport;
   const { data, loading } = useReportData(fetcher, [range, channel]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   if (loading || !data) return <p className="text-sm text-muted-foreground">Cargando...</p>;
 
@@ -79,7 +82,10 @@ export function OrdersReportTab({
           { key: "total", label: "Total", render: (r) => currency.format(r.total) },
         ]}
         rows={data.rows}
+        onRowClick={(r) => setSelectedOrderId(r.id)}
       />
+
+      <OrderDetailDialog orderId={selectedOrderId} onOpenChange={(open) => !open && setSelectedOrderId(null)} />
     </div>
   );
 }

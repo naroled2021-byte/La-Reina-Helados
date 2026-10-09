@@ -43,6 +43,7 @@ async function getOrdersReport({
     avgTicket,
     daily,
     rows: orders.map((o) => ({
+      id: o.id,
       number: formatOrderNumber(o.channel, o.channelNumber),
       date: o.createdAt.toISOString(),
       type: o.type,
