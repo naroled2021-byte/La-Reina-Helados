@@ -12,6 +12,7 @@ import {
   SELF_SERVICE_DELIVERY_FEE,
 } from "@/lib/constants";
 import { formatOrderNumber } from "@/lib/format";
+import { dateKeyAR } from "@/lib/date-ar";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -53,6 +54,7 @@ export async function createSelfServiceOrder(
   const change = data.cashTendered - total;
   const paymentNote = `Paga con $${data.cashTendered.toLocaleString("es-AR")}${change >= 0 ? ` (vuelto $${change.toLocaleString("es-AR")})` : ""}`;
   const notes = data.observations?.trim() ? `${paymentNote}\nObs: ${data.observations.trim()}` : paymentNote;
+  const dayKey = dateKeyAR(new Date());
 
   const result = await db.$transaction(async (tx) => {
     let customer = await tx.customer.findFirst({ where: { phone: data.customerPhone } });
@@ -81,7 +83,7 @@ export async function createSelfServiceOrder(
 
     const [max, maxChannel] = await Promise.all([
       tx.order.aggregate({ _max: { number: true } }),
-      tx.order.aggregate({ where: { channel: ORDER_CHANNEL.SELF_SERVICE }, _max: { channelNumber: true } }),
+      tx.order.aggregate({ where: { channel: ORDER_CHANNEL.SELF_SERVICE, dayKey }, _max: { channelNumber: true } }),
     ]);
     const number = (max._max.number ?? 1040) + 1;
     const channelNumber = (maxChannel._max.channelNumber ?? 0) + 1;
@@ -90,6 +92,7 @@ export async function createSelfServiceOrder(
       data: {
         number,
         channelNumber,
+        dayKey,
         type: data.type,
         status: ORDER_STATUS.RECEIVED,
         channel: ORDER_CHANNEL.SELF_SERVICE,

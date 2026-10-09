@@ -231,6 +231,7 @@ model Order {
   id              String   @id @default(cuid())
   number          Int      @unique // asignado en la app: correlativo global, interno (no se muestra)
   channelNumber   Int      @default(0) // correlativo propio de cada canal: el que se muestra en tickets/pantallas
+  dayKey          String   @default("") // "YYYY-MM-DD" en hora Argentina: channelNumber reinicia cada día por dayKey
   type            String   // DINE_IN | TAKEAWAY | DELIVERY
   status          String   @default("RECEIVED") // RECEIVED | PREPARING | READY | DELIVERED | CANCELLED
   channel         String   @default("COUNTER") // COUNTER | SELF_SERVICE
@@ -253,7 +254,7 @@ model Order {
   cashMovements     CashMovement[]
   inventoryMovements InventoryMovement[]
 
-  @@unique([channel, channelNumber])
+  @@unique([channel, dayKey, channelNumber])
 }
 
 model OrderItem {

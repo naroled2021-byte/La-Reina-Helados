@@ -38,7 +38,6 @@ export type ComandaSettings = {
   address: string;
   phone: string;
   ticketHeader: string;
-  ticketFooter: string;
 };
 
 export type ComandaOrder = {
@@ -128,11 +127,6 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
   }
 
   lines.push(divider);
-  if (settings.ticketFooter) {
-    for (const raw of settings.ticketFooter.split("\n")) {
-      for (const l of wrapText(raw, WRAP_WIDTH)) lines.push(text(l, { align: "center" }));
-    }
-  }
 
   return lines;
 }

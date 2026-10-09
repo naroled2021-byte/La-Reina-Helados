@@ -85,7 +85,6 @@ export async function GET(req: NextRequest) {
         address: settings.address,
         phone: settings.phone,
         ticketHeader: settings.ticketHeader,
-        ticketFooter: settings.ticketFooter,
       }
     )
   );

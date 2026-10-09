@@ -15,6 +15,7 @@ import {
 } from "@/lib/constants";
 import { deductStockForSale } from "@/lib/stock-deduction";
 import { formatOrderNumber } from "@/lib/format";
+import { dateKeyAR } from "@/lib/date-ar";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -43,10 +44,12 @@ export async function createSale(
   const cashTotal = Math.max(subtotal - discount, 0);
   const total = cashTotal + deliveryFee;
 
+  const dayKey = dateKeyAR(new Date());
+
   const result = await db.$transaction(async (tx) => {
     const [max, maxChannel] = await Promise.all([
       tx.order.aggregate({ _max: { number: true } }),
-      tx.order.aggregate({ where: { channel: ORDER_CHANNEL.COUNTER }, _max: { channelNumber: true } }),
+      tx.order.aggregate({ where: { channel: ORDER_CHANNEL.COUNTER, dayKey }, _max: { channelNumber: true } }),
     ]);
     const number = (max._max.number ?? 1040) + 1;
     const channelNumber = (maxChannel._max.channelNumber ?? 0) + 1;
@@ -55,6 +58,7 @@ export async function createSale(
       data: {
         number,
         channelNumber,
+        dayKey,
         type: data.type,
         status: ORDER_STATUS.PREPARING,
         channel: ORDER_CHANNEL.COUNTER,
