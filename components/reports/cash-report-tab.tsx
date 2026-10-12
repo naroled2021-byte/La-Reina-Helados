@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { ReportTable } from "@/components/reports/report-table";
 import { ExportButtons } from "@/components/reports/export-buttons";
+import { CashRegisterDetailDialog } from "@/components/reports/cash-register-detail-dialog";
 import { useReportData } from "@/components/reports/use-report-data";
 import { fetchCashReport } from "@/lib/actions/report-actions";
 import { currency } from "@/lib/format";
@@ -9,6 +11,7 @@ import type { DateRange } from "@/lib/date-range";
 
 export function CashReportTab({ range }: { range: DateRange }) {
   const { data, loading } = useReportData(fetchCashReport, [range]);
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string | null>(null);
 
   if (loading || !data) return <p className="text-sm text-muted-foreground">Cargando...</p>;
 
@@ -51,6 +54,12 @@ export function CashReportTab({ range }: { range: DateRange }) {
           { key: "closedBy", label: "Responsable" },
         ]}
         rows={data}
+        onRowClick={(r) => setSelectedRegisterId(r.id)}
+      />
+
+      <CashRegisterDetailDialog
+        registerId={selectedRegisterId}
+        onOpenChange={(open) => !open && setSelectedRegisterId(null)}
       />
     </div>
   );

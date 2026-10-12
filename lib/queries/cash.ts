@@ -20,3 +20,16 @@ export async function getCashPageData() {
 
   return { openRegister, closedRegisters };
 }
+
+/** Detalle completo de una caja puntual (abierta o cerrada) — lo usa el reporte de Caja
+ *  para mostrar el desglose completo al hacer click en un cierre del historial. */
+export async function getCashRegisterDetail(id: string) {
+  return db.cashRegister.findUnique({
+    where: { id },
+    include: {
+      movements: { include: { user: true }, orderBy: { createdAt: "desc" } },
+      openedBy: true,
+      closedBy: true,
+    },
+  });
+}

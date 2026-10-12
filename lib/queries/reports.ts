@@ -164,6 +164,7 @@ export async function getCashReport({ from, to }: DateRange) {
   });
 
   return registers.map((r) => ({
+    id: r.id,
     openedAt: r.openedAt.toISOString(),
     closedAt: r.closedAt?.toISOString() ?? null,
     openingAmount: r.openingAmount,
