@@ -163,44 +163,48 @@ export function OrderCard({
         </Select>
       </div>
 
-      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-        {prevStatus && (
+      <div className="mt-1 flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5">
+          {prevStatus && (
+            <Button
+              variant="outline"
+              size="icon-sm"
+              className="shrink-0"
+              disabled={isPending}
+              onClick={() => move(prevStatus)}
+              aria-label="Volver"
+            >
+              <ArrowLeft className="size-3.5" />
+            </Button>
+          )}
+          {nextStatus && (
+            <Button size="sm" className="flex-1 gap-1" disabled={isPending} onClick={() => move(nextStatus)}>
+              {nextLabel}
+              <ArrowRight className="size-3.5" />
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
-            size="icon-sm"
-            className="shrink-0"
-            disabled={isPending}
-            onClick={() => move(prevStatus)}
-            aria-label="Volver"
+            size="sm"
+            className="flex-1 gap-1.5"
+            onClick={() => onPrint(order)}
           >
-            <ArrowLeft className="size-3.5" />
+            <Printer className="size-3.5" />
+            Imprimir
           </Button>
-        )}
-        {nextStatus && (
-          <Button size="sm" className="min-w-0 flex-1 gap-1" disabled={isPending} onClick={() => move(nextStatus)}>
-            {nextLabel}
-            <ArrowRight className="size-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-1.5 text-destructive hover:text-destructive"
+            disabled={isPending}
+            onClick={handleCancel}
+          >
+            <Ban className="size-3.5" />
+            Cancelar
           </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0"
-          onClick={() => onPrint(order)}
-          aria-label="Imprimir pedido"
-        >
-          <Printer className="size-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0"
-          disabled={isPending}
-          onClick={handleCancel}
-          aria-label="Cancelar pedido"
-        >
-          <Ban className="size-3.5 text-destructive" />
-        </Button>
+        </div>
       </div>
     </div>
   );
