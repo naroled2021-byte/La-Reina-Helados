@@ -163,11 +163,12 @@ export function OrderCard({
         </Select>
       </div>
 
-      <div className="mt-1 flex items-center gap-1.5">
+      <div className="mt-1 flex flex-wrap items-center gap-1.5">
         {prevStatus && (
           <Button
             variant="outline"
             size="icon-sm"
+            className="shrink-0"
             disabled={isPending}
             onClick={() => move(prevStatus)}
             aria-label="Volver"
@@ -176,7 +177,7 @@ export function OrderCard({
           </Button>
         )}
         {nextStatus && (
-          <Button size="sm" className="flex-1 gap-1" disabled={isPending} onClick={() => move(nextStatus)}>
+          <Button size="sm" className="min-w-0 flex-1 gap-1" disabled={isPending} onClick={() => move(nextStatus)}>
             {nextLabel}
             <ArrowRight className="size-3.5" />
           </Button>
@@ -184,6 +185,7 @@ export function OrderCard({
         <Button
           variant="ghost"
           size="icon-sm"
+          className="shrink-0"
           onClick={() => onPrint(order)}
           aria-label="Imprimir pedido"
         >
@@ -192,6 +194,7 @@ export function OrderCard({
         <Button
           variant="ghost"
           size="icon-sm"
+          className="shrink-0"
           disabled={isPending}
           onClick={handleCancel}
           aria-label="Cancelar pedido"
