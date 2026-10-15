@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowDownCircle, ArrowUpCircle, DoorOpen, Lock } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { OpenRegisterCard } from "@/components/cash/open-register-card";
 import { CashSummaryCards } from "@/components/cash/cash-summary-cards";
 import { MovementsList } from "@/components/cash/movements-list";
 import { AddMovementDialog } from "@/components/cash/add-movement-dialog";
+import { EditMovementDialog } from "@/components/cash/edit-movement-dialog";
 import { CloseRegisterDialog } from "@/components/cash/close-register-dialog";
 import { ClosuresHistory } from "@/components/cash/closures-history";
 import { CashLimitEditor } from "@/components/cash/cash-limit-editor";
+import { deleteCashMovement } from "@/lib/actions/cash-actions";
 import { computeExpectedByMethod } from "@/lib/cash-utils";
-import type { CashPaymentMethod, ClosedRegister, OpenRegister } from "@/components/cash/types";
+import type { CashMovementRow, CashPaymentMethod, ClosedRegister, OpenRegister } from "@/components/cash/types";
 
 export function CashClient({
   openRegister,
@@ -26,8 +30,24 @@ export function CashClient({
   cashLimit: number | null;
   isAdmin: boolean;
 }) {
+  const router = useRouter();
   const [movementDialog, setMovementDialog] = useState<"INCOME" | "EXPENSE" | "MANUAL_OPEN" | null>(null);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [editingMovement, setEditingMovement] = useState<CashMovementRow | null>(null);
+  const [isDeleting, startDeleting] = useTransition();
+
+  function handleDeleteMovement(movement: CashMovementRow) {
+    if (!confirm(`¿Borrar este movimiento (${movement.description ?? movement.type})?`)) return;
+    startDeleting(async () => {
+      const res = await deleteCashMovement(movement.id);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Movimiento borrado");
+      router.refresh();
+    });
+  }
 
   if (!openRegister) {
     return (
@@ -71,7 +91,12 @@ export function CashClient({
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Movimientos</h2>
-        <MovementsList movements={openRegister.movements} />
+        <MovementsList
+          movements={openRegister.movements}
+          onEdit={setEditingMovement}
+          onDelete={handleDeleteMovement}
+          disabled={isDeleting}
+        />
       </div>
 
       {closedRegisters.length > 0 && (
@@ -88,6 +113,7 @@ export function CashClient({
           onOpenChange={(open) => !open && setMovementDialog(null)}
         />
       )}
+      <EditMovementDialog movement={editingMovement} onOpenChange={(open) => !open && setEditingMovement(null)} />
       <CloseRegisterDialog
         open={closeDialogOpen}
         onOpenChange={setCloseDialogOpen}

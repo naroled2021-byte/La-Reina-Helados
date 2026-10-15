@@ -23,6 +23,12 @@ export const movementSchema = z
     path: ["description"],
   });
 
+export const updateMovementSchema = z.object({
+  id: z.string().min(1),
+  amount: z.coerce.number().positive("El monto debe ser mayor a 0"),
+  description: z.string().trim().max(200).optional().or(z.literal("")),
+});
+
 export const closeRegisterSchema = z.object({
   declaredAmounts: z.record(z.string(), z.coerce.number().min(0, "No puede ser negativo")),
   notes: z.string().trim().max(300).optional().or(z.literal("")),
@@ -30,4 +36,5 @@ export const closeRegisterSchema = z.object({
 
 export type OpenRegisterInput = z.infer<typeof openRegisterSchema>;
 export type MovementInput = z.infer<typeof movementSchema>;
+export type UpdateMovementInput = z.infer<typeof updateMovementSchema>;
 export type CloseRegisterInput = z.infer<typeof closeRegisterSchema>;

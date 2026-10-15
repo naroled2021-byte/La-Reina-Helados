@@ -2,18 +2,21 @@
 
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/auth-helpers";
 import {
   openRegisterSchema,
   movementSchema,
+  updateMovementSchema,
   closeRegisterSchema,
   type OpenRegisterInput,
   type MovementInput,
+  type UpdateMovementInput,
   type CloseRegisterInput,
 } from "@/lib/validations/cash";
 import { computeExpectedByMethod, computeExpectedCash, sumAmounts } from "@/lib/cash-utils";
-import { NOTIFICATION_TYPE, ROLES } from "@/lib/constants";
+import { NOTIFICATION_TYPE, ROLES, CASH_MOVEMENT_TYPE } from "@/lib/constants";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -161,6 +164,84 @@ export async function addCashMovement(input: MovementInput): Promise<ActionResul
   }
 
   if (parsed.data.type === "INCOME") await checkCashLimit(register.id, session);
+
+  revalidatePath("/admin/caja");
+  revalidatePath("/admin");
+  return { ok: true, data: undefined };
+}
+
+// Solo se puede tocar un ingreso/egreso de la caja que está abierta ahora mismo — una vez
+// cerrada, los movimientos quedan fijos (ya se usaron para calcular el esperado/declarado de
+// ese cierre, corregirlos después rompería esa cuenta). Tampoco se puede editar/borrar una
+// venta (SALE_CASH/SALE_DIGITAL) ni la apertura manual: solo INCOME/EXPENSE cargados a mano.
+type EditableMovementCheck =
+  | { ok: true; movement: Prisma.CashMovementGetPayload<{ include: { cashRegister: true } }> }
+  | { ok: false; error: string };
+
+async function getEditableMovement(id: string): Promise<EditableMovementCheck> {
+  const movement = await db.cashMovement.findUnique({ where: { id }, include: { cashRegister: true } });
+  if (!movement) return { ok: false, error: "Movimiento no encontrado" };
+  if (movement.cashRegister.status !== "OPEN") {
+    return { ok: false, error: "Esta caja ya está cerrada, no se puede modificar" };
+  }
+  if (movement.type !== CASH_MOVEMENT_TYPE.INCOME && movement.type !== CASH_MOVEMENT_TYPE.EXPENSE) {
+    return { ok: false, error: "Solo se pueden editar ingresos o egresos cargados a mano" };
+  }
+  return { ok: true, movement };
+}
+
+export async function updateCashMovement(input: UpdateMovementInput): Promise<ActionResult> {
+  const session = await requirePermission("cash.manage");
+  const parsed = updateMovementSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const check = await getEditableMovement(parsed.data.id);
+  if (!check.ok) return check;
+  const { movement } = check;
+
+  await db.cashMovement.update({
+    where: { id: movement.id },
+    data: { amount: parsed.data.amount, description: parsed.data.description || null },
+  });
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "cash.movement_update",
+      entity: "CashMovement",
+      entityId: movement.id,
+      metadata: JSON.stringify({
+        before: { amount: movement.amount, description: movement.description },
+        after: { amount: parsed.data.amount, description: parsed.data.description },
+      }),
+    },
+  });
+
+  if (movement.type === CASH_MOVEMENT_TYPE.INCOME) await checkCashLimit(movement.cashRegisterId, session);
+
+  revalidatePath("/admin/caja");
+  revalidatePath("/admin");
+  return { ok: true, data: undefined };
+}
+
+export async function deleteCashMovement(id: string): Promise<ActionResult> {
+  const session = await requirePermission("cash.manage");
+
+  const check = await getEditableMovement(id);
+  if (!check.ok) return check;
+  const { movement } = check;
+
+  await db.cashMovement.delete({ where: { id: movement.id } });
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "cash.movement_delete",
+      entity: "CashMovement",
+      entityId: movement.id,
+      metadata: JSON.stringify({ type: movement.type, amount: movement.amount, description: movement.description }),
+    },
+  });
 
   revalidatePath("/admin/caja");
   revalidatePath("/admin");
