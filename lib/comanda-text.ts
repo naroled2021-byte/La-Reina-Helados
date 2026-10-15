@@ -1,5 +1,6 @@
 import { ORDER_TYPE_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { currency, formatOrderNumber } from "@/lib/format";
+import { formatDateTimeAR } from "@/lib/date-ar";
 
 // Ancho usado solo para decidir DÓNDE cortar un texto largo en varias líneas (direcciones,
 // notas, lista de sabores) — no para alinear ni centrar: eso lo hace el script que imprime,
@@ -73,12 +74,7 @@ export function buildComandaLines(order: ComandaOrder, settings: ComandaSettings
 
   lines.push(divider);
   lines.push(text("AUTOSERVICIO", { align: "center", big: true }));
-  const date = order.createdAt.toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const date = formatDateTimeAR(order.createdAt);
   // "Pedido #" en su propia línea grande: si va junto con la hora en la misma línea (las
   // dos en letra grande) no entran y se pisan en papel angosto.
   lines.push(text(`Pedido #${formatOrderNumber(order.channel, order.channelNumber)}`, { big: true }));

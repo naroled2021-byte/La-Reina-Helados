@@ -38,3 +38,16 @@ export function startOfMonthAR(d: Date = new Date()): Date {
   const offset = String(AR_UTC_OFFSET_HOURS).padStart(2, "0");
   return new Date(`${year}-${month}-01T${offset}:00:00.000Z`);
 }
+
+/** Fecha y hora de Argentina de `d`, formateadas ("DD/MM, HH:mm") — para imprimir la
+ *  comanda del lado del servidor (que corre en UTC) con la misma hora que ve el local en
+ *  Pedidos (que se calcula en el navegador, con la hora de la PC). */
+export function formatDateTimeAR(d: Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone: AR_TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
