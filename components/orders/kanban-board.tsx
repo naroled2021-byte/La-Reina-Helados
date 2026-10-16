@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Bell, BellOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { OrderCard } from "@/components/orders/order-card";
 import { TicketView, type TicketData, type TicketSettings } from "@/components/mostrador/ticket-view";
 import { logOrderReprint } from "@/lib/actions/order-actions";
@@ -68,6 +70,11 @@ const selfServiceColumns: Column[] = [
   { status: ORDER_STATUS.DELIVERED, title: "Entregados", next: null, nextLabel: null, prev: ORDER_STATUS.PREPARING },
 ];
 
+// Preferencia de este dispositivo/pantalla, no del negocio — por eso se guarda en
+// localStorage y no en la base: cada local/PC puede querer silenciar la alerta sin afectar
+// a los demás.
+const SOUND_SETTING_KEY = "pedidos.autoservicioSound";
+
 export function KanbanBoard({
   orders,
   ticketSettings,
@@ -79,6 +86,30 @@ export function KanbanBoard({
   const knownIds = useRef<Set<string> | null>(null);
   const [printQueue, setPrintQueue] = useState<TicketData[]>([]);
   const printingRef = useRef(false);
+  // Lectura inicial directo del localStorage (sin useEffect, para no disparar un re-render en
+  // cascada) — en el server (SSR) no existe window, así que ahí arranca en true y se corrige
+  // en el primer render del cliente.
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const saved = localStorage.getItem(SOUND_SETTING_KEY);
+      return saved === null ? true : saved === "1";
+    } catch {
+      return true;
+    }
+  });
+
+  function toggleSound() {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SOUND_SETTING_KEY, next ? "1" : "0");
+      } catch {
+        // noop
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     const currentIds = new Set(orders.map((o) => o.id));
@@ -91,7 +122,10 @@ export function KanbanBoard({
       for (const order of newArrivals) {
         toast.info(`Nuevo pedido #${formatOrderNumber(order.channel, order.channelNumber)}`);
       }
-      if (newArrivals.length > 0) playNotificationSound();
+      // La alerta sonora es para avisar que llegó un pedido que nadie del local vio todavía
+      // (el de Mostrador lo carga el propio local, ya lo "vio" quien lo tipeó).
+      const newSelfServiceArrivals = newArrivals.filter((o) => o.channel === ORDER_CHANNEL.SELF_SERVICE);
+      if (newSelfServiceArrivals.length > 0 && soundEnabled) playNotificationSound();
 
       // Autoservicio ya no imprime desde acá: lo maneja el agente local de impresión
       // (/api/print-queue), que manda esos tickets directo a su propia impresora por nombre.
@@ -106,7 +140,7 @@ export function KanbanBoard({
     }
 
     knownIds.current = currentIds;
-  }, [orders]);
+  }, [orders, soundEnabled]);
 
   function handleManualPrint(order: KanbanOrder) {
     setPrintQueue((prev) => [...prev, toTicketData(order)]);
@@ -145,6 +179,12 @@ export function KanbanBoard({
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSound}>
+          {soundEnabled ? <Bell className="size-4" /> : <BellOff className="size-4" />}
+          {soundEnabled ? "Alerta de pedidos activada" : "Alerta de pedidos silenciada"}
+        </Button>
+      </div>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <OrderBoardRow
           title="Mostrador / Ventas"
