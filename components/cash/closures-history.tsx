@@ -1,7 +1,13 @@
 import { currency } from "@/lib/format";
 import type { ClosedRegister } from "@/components/cash/types";
 
-export function ClosuresHistory({ closures }: { closures: ClosedRegister[] }) {
+export function ClosuresHistory({
+  closures,
+  onRowClick,
+}: {
+  closures: ClosedRegister[];
+  onRowClick?: (id: string) => void;
+}) {
   if (closures.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed py-8 text-center text-sm text-muted-foreground">
@@ -27,7 +33,11 @@ export function ClosuresHistory({ closures }: { closures: ClosedRegister[] }) {
           {closures.map((c) => {
             const diff = c.difference ?? 0;
             return (
-              <tr key={c.id} className="border-t">
+              <tr
+                key={c.id}
+                className={`border-t ${onRowClick ? "cursor-pointer hover:bg-accent/40" : ""}`}
+                onClick={() => onRowClick?.(c.id)}
+              >
                 <td className="py-2">
                   {c.closedAt ? new Date(c.closedAt).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" }) : "—"}
                 </td>

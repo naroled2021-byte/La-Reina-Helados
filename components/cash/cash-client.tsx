@@ -12,6 +12,7 @@ import { AddMovementDialog } from "@/components/cash/add-movement-dialog";
 import { EditMovementDialog } from "@/components/cash/edit-movement-dialog";
 import { CloseRegisterDialog } from "@/components/cash/close-register-dialog";
 import { ClosuresHistory } from "@/components/cash/closures-history";
+import { ClosureDetailDialog } from "@/components/cash/closure-detail-dialog";
 import { CashLimitEditor } from "@/components/cash/cash-limit-editor";
 import { deleteCashMovement } from "@/lib/actions/cash-actions";
 import { computeExpectedByMethod } from "@/lib/cash-utils";
@@ -34,6 +35,7 @@ export function CashClient({
   const [movementDialog, setMovementDialog] = useState<"INCOME" | "EXPENSE" | "MANUAL_OPEN" | null>(null);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [editingMovement, setEditingMovement] = useState<CashMovementRow | null>(null);
+  const [selectedClosureId, setSelectedClosureId] = useState<string | null>(null);
   const [isDeleting, startDeleting] = useTransition();
 
   function handleDeleteMovement(movement: CashMovementRow) {
@@ -56,9 +58,15 @@ export function CashClient({
         {closedRegisters.length > 0 && (
           <div>
             <h2 className="mb-3 text-sm font-medium text-muted-foreground">Historial de cierres</h2>
-            <ClosuresHistory closures={closedRegisters} />
+            <ClosuresHistory closures={closedRegisters} onRowClick={setSelectedClosureId} />
           </div>
         )}
+        <ClosureDetailDialog
+          registerId={selectedClosureId}
+          onOpenChange={(open) => !open && setSelectedClosureId(null)}
+          isAdmin={isAdmin}
+          paymentMethods={paymentMethods}
+        />
       </div>
     );
   }
@@ -102,9 +110,15 @@ export function CashClient({
       {closedRegisters.length > 0 && (
         <div>
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">Historial de cierres</h2>
-          <ClosuresHistory closures={closedRegisters} />
+          <ClosuresHistory closures={closedRegisters} onRowClick={setSelectedClosureId} />
         </div>
       )}
+      <ClosureDetailDialog
+        registerId={selectedClosureId}
+        onOpenChange={(open) => !open && setSelectedClosureId(null)}
+        isAdmin={isAdmin}
+        paymentMethods={paymentMethods}
+      />
 
       {movementDialog && (
         <AddMovementDialog

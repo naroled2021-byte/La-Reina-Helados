@@ -68,7 +68,7 @@ function EditForm({
     <>
       <DialogHeader>
         <DialogTitle>Editar {CASH_MOVEMENT_TYPE_LABEL[movement.type]?.toLowerCase() ?? "movimiento"}</DialogTitle>
-        <DialogDescription>Solo se puede editar mientras esta caja siga abierta.</DialogDescription>
+        <DialogDescription>Los cambios se guardan de inmediato.</DialogDescription>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
